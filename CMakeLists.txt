@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
@@ -10,9 +10,13 @@ SET(OpenCV_STATIC OFF)
 FIND_PACKAGE(OpenCV REQUIRED)
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 
-project(Sketch)
+SET(VTK_DIR "/usr/local")
+FIND_PACKAGE(VTK REQUIRED)
+INCLUDE(${VTK_USE_FILE})
 
-set(SOURCE_FILES src/main.cpp)
-add_executable(sketch ${SOURCE_FILES} src/geometry/triangle.cpp src/geometry/triangle.h src/geometry/line.cpp src/geometry/line.h src/geometry/model.cpp src/geometry/model.h)
+PROJECT(Sketch)
 
-TARGET_LINK_LIBRARIES(sketch ${OpenCV_LIBS})
+SET(SOURCE_FILES src/main.cpp)
+ADD_EXECUTABLE(sketch ${SOURCE_FILES} src/geometry/triangle.cpp src/geometry/triangle.h src/geometry/line.cpp src/geometry/line.h src/geometry/model.cpp src/geometry/model.h)
+
+TARGET_LINK_LIBRARIES(sketch ${OpenCV_LIBS} ${VTK_LIBRARIES})
