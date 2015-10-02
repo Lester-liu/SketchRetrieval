@@ -7,15 +7,15 @@
 namespace sketch {
 
     Triangle::Triangle() {
-        a = Point2f(0, 0);
-        b = Point2f(0, 0);
-        c = Point2f(0, 0);
+        a = Point3f(0, 0, 0);
+        b = Point3f(0, 0, 0);
+        c = Point3f(0, 0, 0);
     }
 
-    Triangle::Triangle(const Point2f &a, const Point2f &b, const Point2f &c) {
-        this->a = Point2f(a);
-        this->b = Point2f(b);
-        this->c = Point2f(c);
+    Triangle::Triangle(const Point3f &a, const Point3f &b, const Point3f &c) {
+        this->a = Point3f(a);
+        this->b = Point3f(b);
+        this->c = Point3f(c);
     }
 
     ostream& operator<<(ostream &out, const Triangle &triangle) {

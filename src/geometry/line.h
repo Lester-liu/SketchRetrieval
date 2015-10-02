@@ -17,13 +17,14 @@ namespace sketch {
     class Line {
     public:
         Line();
-        Line(const Point2f& a, const Point2f& b);
-        Line(const Point2f& a, const float theta);
+        Line(const Point3f& a, const Point3f& b);
+        Line(const Point3f& a, const float delta_y, const float delta_z);
 
         friend ostream& operator<<(ostream &out, const Line& line);
 
-        Point2f a, b;
-        float theta; // tangent of the direction (tan(theta))
+        Point3f a;
+        float delta_y, delta_z; // direction
+
     };
 
 }

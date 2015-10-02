@@ -16,11 +16,11 @@ namespace sketch {
     class Triangle {
     public:
         Triangle();
-        Triangle(const Point2f &a, const Point2f &b, const Point2f &c);
+        Triangle(const Point3f &a, const Point3f &b, const Point3f &c);
 
         friend ostream& operator<< (ostream &out, const Triangle& triangle);
 
-        Point2f a, b, c;
+        Point3f a, b, c;
     };
 
 

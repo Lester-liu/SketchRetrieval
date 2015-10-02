@@ -13,6 +13,6 @@ INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 project(Sketch)
 
 set(SOURCE_FILES src/main.cpp)
-add_executable(sketch ${SOURCE_FILES} src/geometry/triangle.cpp src/geometry/triangle.h src/geometry/line.cpp src/geometry/line.h)
+add_executable(sketch ${SOURCE_FILES} src/geometry/triangle.cpp src/geometry/triangle.h src/geometry/line.cpp src/geometry/line.h src/geometry/model.cpp src/geometry/model.h)
 
 TARGET_LINK_LIBRARIES(sketch ${OpenCV_LIBS})
