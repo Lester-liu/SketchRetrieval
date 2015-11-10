@@ -5,8 +5,18 @@
 #ifndef SKETCH_SVM_H
 #define SKETCH_SVM_H
 
+#include "ml.h"
 
-class SVM {
+class SVM: ML {
+
+public:
+
+    SVM();
+    SVM(Blob *training, Blob *validation, Blob *testing, Blob *label, Blob *prediction);
+    ~SVM();
+
+    void train();
+    void predict();
 
 };
 

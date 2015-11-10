@@ -16,7 +16,10 @@ INCLUDE(${VTK_USE_FILE})
 
 PROJECT(Sketch)
 
-SET(SOURCE_FILES src/main.cpp)
-ADD_EXECUTABLE(sketch ${SOURCE_FILES} src/geometry/triangle.cpp src/geometry/triangle.h src/geometry/line.cpp src/geometry/line.h src/geometry/model.cpp src/geometry/model.h src/geometry/transform.cpp)
+SET(MAIN src/main.cpp)
+SET(LEARNING src/learning/svm.cpp src/learning/svm.h src/learning/ml.cpp src/learning/ml.h)
+SET(DATA src/structure/blob.cpp src/structure/blob.h)
+SET(GEOMETRY src/geometry/triangle.cpp src/geometry/triangle.h src/geometry/line.cpp src/geometry/line.h src/geometry/model.cpp src/geometry/model.h src/geometry/transform.cpp)
+ADD_EXECUTABLE(sketch ${MAIN} ${LEARNING} ${DATA} ${GEOMETRY})
 
 TARGET_LINK_LIBRARIES(sketch ${OpenCV_LIBS} ${VTK_LIBRARIES})

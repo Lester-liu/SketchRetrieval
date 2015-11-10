@@ -1,9 +1,6 @@
-/*
- * Blob - data wrapper
- * Blob contains information of a 3D array: content and size
- *
- * Created by lyx on 10/11/15.
- */
+//
+// Created by lyx on 10/11/15.
+//
 
 #ifndef SKETCH_BLOB_H
 #define SKETCH_BLOB_H
@@ -56,18 +53,18 @@ struct Dim {
 };
 
 /*
- * Data structure
+ * Data structure or wrapper
  */
 class Blob {
 
 public:
 
-    float* data; // 1D array content
+    float *data; // 1D array content
     Dim size; // Real dimension of the content
 
     Blob();
     Blob(Dim size); // 0 array
-    Blob(float* data, Dim size); // Copy the value into new array
+    Blob(float *data, Dim size); // Copy the value into new array
     virtual ~Blob();
 
 };

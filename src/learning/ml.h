@@ -7,24 +7,28 @@
 
 #include "../structure/blob.h"
 
+/*
+ * Abstract class for Machine Learning methods
+ */
 class ML {
 
 private:
 
-    Blob* training;
-    Blob* validation;
-    Blob* testing;
-    Blob* label;
-    Blob* prediction;
+    Blob *training; // training set
+    Blob *validation; // validation set
+    Blob *testing; // testing set
+    Blob *label; // correct label information
+    Blob *prediction; // prediction of the system
 
 public:
 
     ML();
-    ML(Blob* training, Blob* validation, Blob* testing, Blob* label, Blob* prediction);
+    ML(Blob *training, Blob *validation, Blob *testing, Blob *label, Blob *prediction);
     ~ML();
 
-    virtual void train() = 0;
-    virtual void predict() = 0;
+    virtual void train() = 0; // main training method
+    virtual void predict() = 0; // prediction method
+
 };
 
 
