@@ -37,7 +37,6 @@
 #include <vtkWindowToImageFilter.h>
 #include <vtkPNGWriter.h>
 
-#include <iostream>
 #include <cmath>
 
 using namespace std;
