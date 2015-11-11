@@ -18,7 +18,7 @@ int main() {
 
     Triangle tri(Point3f(1.23f, 1, 0.5), Point3f(2, 2, 1), Point3f(3, 4, -3));
     Line line(Point3f(1, 1, 1), Point3f(2.26, 5, 0.4));
-    ifstream input("../models/models/m0.off");
+    ifstream input("../pipeline/models_off/m0.off");
     Model model(input);
     cout << tri << line << model;
 
