@@ -11,6 +11,10 @@ SVM::SVM(Blob *training, Blob *validation, Blob *testing, Blob *label, Blob *pre
 
 SVM::~SVM() { }
 
-void SVM::train() { }
+void SVM::train() {
 
-void SVM::predict() { }
+}
+
+void SVM::predict() {
+
+}

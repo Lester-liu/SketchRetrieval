@@ -31,5 +31,4 @@ public:
 
 };
 
-
 #endif //SKETCH_ML_H
