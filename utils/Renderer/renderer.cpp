@@ -8,7 +8,8 @@
  * Usage 1 - single image:
  * Parameters:
  *      s (single mode)
- *      p (position of the camera in polar coordinates: r, phi, theta)
+ *      p (position of the camera in polar coordinates: r, phi[0 - 359], theta[0 - 359])
+ *      c (color of background in RGB [0 - 255]: red, green, blue)
  *      f (path to PLY mesh to be rendered)
  *      t (PNG file name of generated image)
  * ex: Renderer -s [-p r theta phi] [-c r g b] -f Path_to_model_file -t Path_to_image_file
@@ -17,10 +18,11 @@
  * Parameters:
  *      g (group mode)
  *      p (distance of the camera from mass center of the model: d)
+ *      c (color of background in RGB [0 - 255]: red, green, blue)
  *      n (square root of number of images: enter 3 to generate 9 images)
  *      f (path to PLY model)
  *      t (path of the folder where images will be generated)
- * ex: Renderer -g [-p d] [-n Number] -f Path_to_model_file -t Path_to_image_folder
+ * ex: Renderer -g [-p d] [-c r g b] [-n Number] -f Path_to_model_file -t Path_to_image_folder
  */
 
 #include <vtkPolyData.h>
@@ -88,16 +90,12 @@ int main(int argc, char *argv[]) {
     vtkSmartPointer<vtkRenderer> renderer =
             vtkSmartPointer<vtkRenderer>::New();
     renderer->SetActiveCamera(camera);
+    renderer->AddActor(actor);
+    renderer->SetBackground(0, 0, 0); // Black background
 
     vtkSmartPointer<vtkRenderWindow> renderWindow =
             vtkSmartPointer<vtkRenderWindow>::New();
     renderWindow->AddRenderer(renderer);
-    vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
-            vtkSmartPointer<vtkRenderWindowInteractor>::New();
-    renderWindowInteractor->SetRenderWindow(renderWindow);
-
-    renderer->AddActor(actor);
-    renderer->SetBackground(0, 0, 0); // Black background
 
     renderWindow->Render();
 
@@ -114,8 +112,6 @@ int main(int argc, char *argv[]) {
     writer->SetFileName("/home/lyx/workspace/cuda/Sketch/pipeline/views/m0_0_0.png");
     writer->SetInputConnection(windowToImageFilter->GetOutputPort());
     writer->Write();
-
-    renderWindowInteractor->Start();
 
     return EXIT_SUCCESS;
 }
