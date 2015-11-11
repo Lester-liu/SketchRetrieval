@@ -1,9 +1,26 @@
 /*
- * Sub Project - 3D Mesh (PLY) rendering
+ * 3D Mesh (PLY) rendering
  *
  * In the project, we will show how to draw 3D mesh with VTK library, you can
  * use this code to generate snapshot of your model from any point of view
  * you like.
+ *
+ * Usage 1 - single image:
+ * Parameters:
+ *      s (single mode)
+ *      p (position of the camera in polar coordinates: r, phi, theta)
+ *      f (path to PLY mesh to be rendered)
+ *      t (PNG file name of generated image)
+ * ex: Renderer -s [-p r theta phi] [-c r g b] -f Path_to_model_file -t Path_to_image_file
+ *
+ * Usage 2 - group rendering:
+ * Parameters:
+ *      g (group mode)
+ *      p (distance of the camera from mass center of the model: d)
+ *      n (square root of number of images: enter 3 to generate 9 images)
+ *      f (path to PLY model)
+ *      t (path of the folder where images will be generated)
+ * ex: Renderer -g [-p d] [-n Number] -f Path_to_model_file -t Path_to_image_folder
  */
 
 #include <vtkPolyData.h>
