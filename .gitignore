@@ -4,7 +4,8 @@ Debug/
 .*
 benchmark/
 *Debug/
-pipeline/
+*Debug/
+pipeline/views
 testing_sketch/
 training_sketch/
 training_sketch_examples
