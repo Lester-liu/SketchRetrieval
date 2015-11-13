@@ -14,10 +14,6 @@ SET(VTK_DIR "/usr/local")
 FIND_PACKAGE(VTK REQUIRED)
 INCLUDE(${VTK_USE_FILE})
 
-SET(BOOST_ROOT "/usr/local")
-FIND_PACKAGE(Boost REQUIRED)
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-
 PROJECT(Sketch)
 
 SET(MAIN src/sketch.cpp)
@@ -26,4 +22,4 @@ SET(DATA src/structure/blob.cpp src/structure/blob.h)
 SET(GEOMETRY src/geometry/triangle.cpp src/geometry/triangle.h src/geometry/line.cpp src/geometry/line.h src/geometry/model.cpp src/geometry/model.h src/geometry/transform.cpp)
 ADD_EXECUTABLE(sketch ${MAIN} ${LEARNING} ${DATA} ${GEOMETRY})
 
-TARGET_LINK_LIBRARIES(sketch ${OpenCV_LIBS} ${VTK_LIBRARIES} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_REGEX_LIBRARY})
+TARGET_LINK_LIBRARIES(sketch ${OpenCV_LIBS} ${VTK_LIBRARIES})
