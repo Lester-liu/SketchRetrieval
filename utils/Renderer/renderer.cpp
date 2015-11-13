@@ -38,6 +38,7 @@
 #include <vtkPNGWriter.h>
 
 #include <cmath>
+#include <vtkRenderLargeImage.h>
 
 using namespace std;
 
@@ -208,15 +209,13 @@ int main(int argc, char **argv) {
 
             vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
             renderWindow->AddRenderer(renderer);
+            renderWindow->SetOffScreenRendering(1); // Off Screen rendering
 
-            renderWindow->Render();
+            renderWindow->Render(); // Renderer needs a windows to render its image
 
-            vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter = vtkSmartPointer<vtkWindowToImageFilter>::New();
-            windowToImageFilter->SetInput(renderWindow);
-            windowToImageFilter->SetMagnification(2); //set the resolution of the output image
-            windowToImageFilter->SetInputBufferTypeToRGB();
-            windowToImageFilter->ReadFrontBufferOff(); // read from the back buffer
-            windowToImageFilter->Update();
+            vtkSmartPointer<vtkRenderLargeImage> renderLarge = vtkSmartPointer<vtkRenderLargeImage>::New();
+            renderLarge->SetInput(renderer);
+            renderLarge->SetMagnification(1);
 
             vtkSmartPointer<vtkPNGWriter> writer =
                     vtkSmartPointer<vtkPNGWriter>::New();
@@ -227,7 +226,7 @@ int main(int argc, char **argv) {
                 suffix = '_' + to_string((int)theta) + '_' + to_string((int)phi) + ".png";
 
             writer->SetFileName((output + suffix).c_str());
-            writer->SetInputConnection(windowToImageFilter->GetOutputPort());
+            writer->SetInputConnection(renderLarge->GetOutputPort());
             writer->Write();
 
         }
