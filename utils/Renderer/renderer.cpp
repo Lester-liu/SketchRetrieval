@@ -21,7 +21,7 @@
  *      c (color of background in RGB [0 - 255]: red, green, blue)
  *      n (square root of number of images: enter 3 to generate 9 images)
  *      f (path to PLY model)
- *      t (path of the folder where images will be generated)
+ *      t (path of the folder where images will be generated, with '/' in the end)
  * ex: Renderer -g [-p r] [-c r g b] [-n Number] -f Path_to_model_file -t Path_to_image_folder
  */
 
@@ -223,7 +223,7 @@ int main(int argc, char **argv) {
             // use angles in the file name
             string suffix = "";
             if (mode == Group)
-                suffix = '_' + to_string((int)theta) + '_' + to_string((int)phi) + ".png";
+                suffix = '_' + to_string(((int)theta) % 360) + '_' + to_string(((int)phi) % 360) + ".png";
 
             writer->SetFileName((output + suffix).c_str());
             writer->SetInputConnection(renderLarge->GetOutputPort());
