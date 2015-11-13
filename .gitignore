@@ -1,0 +1,10 @@
+Debug/
+*.pdf
+.idea*
+.*
+benchmark/
+*Debug/
+pipeline/
+testing_sketch/
+training_sketch/
+training_sketch_examples
