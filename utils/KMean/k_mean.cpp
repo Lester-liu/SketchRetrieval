@@ -4,8 +4,7 @@
  * This program implements the K-Mean clustering method. It takes a set of points (lines in a binary file) and
  * returns the group number of each point and an extra file to describe the group, namely the group center.
  *
- * Usage:
- *      k_mean [Path_to_file]
+ * Usage: k_mean [Path_to_file]
  *
  * N.B. The file format is very specific, it is a binary file with integers and floats, so please pay attention to the
  * big / little endian problem. You may want to generate the file by program in case of theses sorts of problems.
