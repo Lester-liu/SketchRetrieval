@@ -15,6 +15,7 @@ do
 
     for Src in $Folder*
     do
+            echo $Src
             # Get the file name (after the last '/')
             File="${Src##*/}"
             # Run the contour_extraction
