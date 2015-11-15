@@ -5,7 +5,6 @@
 Files="$1"
 Dest_Folder="$2"
 
-
 for Folder in $Files*/
 do
     Dest_Folder_Name="${Folder%/}"
