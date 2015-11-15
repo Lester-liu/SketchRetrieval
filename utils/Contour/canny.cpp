@@ -9,14 +9,25 @@
  *      t (path to store the result)
  *      s (parameters to tune the result)
  * Ex: contour -f [Path_to_input_image] -t [Path_to_contour_image] [-s max_threshold min_threshold]
+ *
+ * For large image, use GPU can accelerate a lot.
  */
 
 #include <iostream>
-#include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+
+#ifdef CUDA_ENABLED
+#include <opencv2/cudaimgproc.hpp>
+#else
+#include <opencv2/imgproc/imgproc.hpp>
+#endif
 
 using namespace std;
 using namespace cv;
+
+#ifdef CUDA_ENABLED
+using namespace cv::cuda;
+#endif
 
 char *input,*output;
 int max_threshold, min_threshold;
@@ -73,11 +84,25 @@ int main(int argc, char** argv) {
 
     if (!parse_command_line(argc, argv))
         return EXIT_FAILURE;
-    cout << output << endl;
 
     Mat image = imread(input, IMREAD_GRAYSCALE);
+
+#ifdef CUDA_ENABLED
+    GpuMat d_image;
+    d_image.upload(image);
+    GpuMat d_contour;
+    Ptr<CannyEdgeDetector> detector = createCannyEdgeDetector(min_threshold, max_threshold);
+#endif
+
     Mat outline;
+
+#ifdef CUDA_ENABLED
+    detector->detect(d_image, d_contour);
+    d_contour.download(outline);
+#else
     Canny(image, outline, min_threshold, max_threshold);
+#endif
+
     imwrite(output, outline);
 
     return EXIT_SUCCESS;

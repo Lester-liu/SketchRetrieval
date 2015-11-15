@@ -18,6 +18,6 @@ do
             # Get the file name (after the last '/')
             File="${Src##*/}"
             # Run the contour_extraction
-            ./Contour/Release/contour -f $Src -t $Dest_Folder$Dest_Folder_Name/$File;
+            ./Contour/Debug/contour -f $Src -t $Dest_Folder$Dest_Folder_Name/$File;
     done
 done
