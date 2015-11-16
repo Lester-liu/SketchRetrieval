@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
 
     if (!parse_command_line(argc, argv))
         return EXIT_FAILURE;
-    cout << output << endl;
+    cout << getBuildInformation() << endl;
 
     Mat image = imread(input, IMREAD_GRAYSCALE);
     Mat outline;
