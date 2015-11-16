@@ -79,13 +79,14 @@ int main(int argc, char** argv) {
     input = NULL;
     output = NULL;
 
+    // default parameters
     min_threshold = 300;
     max_threshold = 500;
 
     if (!parse_command_line(argc, argv))
         return EXIT_FAILURE;
 
-    Mat image = imread(input, IMREAD_GRAYSCALE);
+    Mat image = imread(input, IMREAD_GRAYSCALE); // use 8-bits image
 
 #ifdef CUDA_ENABLED
     GpuMat d_image;
@@ -103,7 +104,7 @@ int main(int argc, char** argv) {
     Canny(image, outline, min_threshold, max_threshold);
 #endif
 
-    imwrite(output, outline);
+    imwrite(output, outline); // save the image file
 
     return EXIT_SUCCESS;
 }
