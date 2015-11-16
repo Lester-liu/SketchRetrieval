@@ -114,12 +114,12 @@ int main(int argc, char** argv) {
     allocation = new int[data_count];
     cluster_size = new int[center_count];
 
-    callCuda(cudaMalloc(d_data, sizeof(float) * dim * data_count));
-    callCuda(cudaMalloc(d_center, sizeof(float) * dim * center_count));
-    callCuda(cudaMalloc(d_tmp_diff, sizeof(float) * dim * center_count));
-    callCuda(cudaMalloc(d_tmp_dist, sizeof(float) * center_count));
-    callCuda(cudaMalloc(d_allocation, sizeof(float) * data_count * center_count));
-    callCuda(cudaMalloc(d_cluster_size, sizeof(float) * center_count));
+    callCuda(cudaMalloc(&d_data, sizeof(float) * dim * data_count));
+    callCuda(cudaMalloc(&d_center, sizeof(float) * dim * center_count));
+    callCuda(cudaMalloc(&d_tmp_diff, sizeof(float) * dim * center_count));
+    callCuda(cudaMalloc(&d_tmp_dist, sizeof(float) * center_count));
+    callCuda(cudaMalloc(&d_allocation, sizeof(float) * data_count * center_count));
+    callCuda(cudaMalloc(&d_cluster_size, sizeof(float) * center_count));
 
 
 
