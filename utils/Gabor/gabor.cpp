@@ -67,7 +67,7 @@ void output_result(string output) {
 
 void show_help() {
     printf("Gabor filter\n"
-                   "s\n"
+                   "\n"
                    "Gabor filter is one way to extract edge or other features from an image. By using multiple filters with\n"
                    "different orientation, one can build a bag-of-features for a given image. This program takes as parameters\n"
                    "the kernel size, orientation, etc..\n"
@@ -84,12 +84,13 @@ void show_help() {
                    "     o: output image folder (with '/' in the end)\n"
                    "\n"
                    "Usage:\n"
-                   "     gabor -k [k] -n [n] -s [sigma] -t [theta] -l [lambda] -b [beta] -f [Path_to_input] -t [Path_to_output]");
+                   "     gabor -k [k] -n [n] -s [sigma] -t [theta] -l [lambda] -b [beta] -i [Path_to_input] -o [Path_to_output]\n");
 
 }
 
 bool parse_command_line(int argc, char **argv) {
     int i = 1;
+    stringstream ss;
     while(i < argc) {
         if (argv[i][0] != '-')
             break;
@@ -119,15 +120,18 @@ bool parse_command_line(int argc, char **argv) {
                 beta = atof(argv[++i]);
                 break;
             case 'i': // input file
-                input = argv[++i];
+                ss << argv[++i];
+                ss >> input;
+                ss.clear();
                 break;
             case 'o': // output file
-                output = argv[++i];
+                ss << argv[++i];
+                ss >> output;
                 break;
         }
         i++;
     }
-    if (input == NULL || output == NULL) { // invalid file name
+    if (input == "" || output == "") { // invalid file name
         show_help();
         return false;
     }
@@ -163,6 +167,6 @@ int main(int argc, char** argv) {
     }
 
     output_result(output);
-
+    cout << "succeed!" << endl;
     return 0;
 }
