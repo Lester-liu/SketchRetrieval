@@ -8,5 +8,5 @@ Files="$1"
 
 for Folder in $Files*/
 do
-    ./sample/Debug/./sample $Folder $Folder/view.txt
+    ./view_selection/Debug/view_selection $Folder $Folder/view.txt
 done
