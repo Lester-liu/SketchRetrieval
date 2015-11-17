@@ -4,7 +4,7 @@
  * This program implements the K-Mean clustering method. It takes a set of points (lines in a binary file) and
  * returns the group number of each point and an extra file to describe the group, namely the group center.
  *
- * Usage: k_mean [Path_to_file]
+ * Usage: k_mean [Path_to_file] Number_of_center
  *
  * N.B. The file format is very specific, it is a binary file with integers and floats, so please pay attention to the
  * big / little endian problem. You may want to generate the file by program in case of theses sorts of problems.
@@ -21,12 +21,17 @@
 #include <iostream>
 #include <sstream>
 #include <set>
+#include <iomanip>
+
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
 #include <cusparse.h>
 
 #include "kernel.h"
+#include "read_data.h"
 
 #define fatalError(s) do {                                             \
     std::stringstream _where, _message;                                \
@@ -44,8 +49,6 @@
     	fatalError(_error.str());                                      \
     }                                                                  \
 } while(0)
-
-
 
 using namespace std;
 
@@ -80,7 +83,27 @@ string input, output; // file name
 cublasHandle_t cublas_handle;
 cusparseHandle_t cusparse_handle;
 
-void initialize() {
+template <typename T>
+void printCpuMatrix(T* m, int n, int r, int c, int precision) {
+    cout << "Size: " << r << " * " << c << endl;
+    for (int i = 0; i < r; i++) {
+        for (int j = 0; j < c; j++)
+            cout << fixed << setprecision(precision) << m[i + j * r] << '\t';
+        cout << endl;
+    }
+    cout << endl;
+}
+
+template <typename T>
+void printGpuMatrix(T* d_m, int n, int r, int c, int precision) {
+    T* m = new T[n];
+    cublasGetVector(n, sizeof(*m), d_m, 1, m, 1);
+    printCpuMatrix(m, n, r, c, precision);
+    delete[] m;
+}
+
+
+void initialize_monoid() {
 
     // select k different centers
 
@@ -89,7 +112,6 @@ void initialize() {
         selected.insert(rand() % data_count);
 
     // copy theirs coordinates
-
     int column = 0;
     for (int i: selected) {
         for (int j = 0; j < dim; j++)
@@ -99,8 +121,16 @@ void initialize() {
 
     // copy to the device
 
-    callCuda(cudaMemcpy(d_data, data, size_t(dim * data_count), cudaMemcpyHostToDevice));
-    callCuda(cudaMemcpy(d_center, center, size_t(dim * center_count), cudaMemcpyHostToDevice));
+    callCuda(cudaMemcpy(d_data, data, sizeof(float) * dim * data_count, cudaMemcpyHostToDevice));
+    callCuda(cudaMemcpy(d_center, center, sizeof(float) * dim * center_count, cudaMemcpyHostToDevice));
+
+}
+
+void initialize_centroid() {
+
+    set_uniform_value(d_center, dim * center_count, 256);
+    callCuda(cudaMemcpy(d_data, data, sizeof(float) * dim * data_count, cudaMemcpyHostToDevice));
+    callCuda(cudaMemcpy(center, d_center, sizeof(float) * dim * center_count, cudaMemcpyDeviceToHost));
 
 }
 
@@ -117,13 +147,16 @@ void find_nearest_center() {
     for (int i = 0; i < data_count; i++) {
         // compute the distance
         square_minus(d_center, dim, center_count, d_data + i * dim, d_tmp_diff);
-        callCuda(cublasSgemv(cublas_handle, CUBLAS_OP_N, dim, center_count, &one, d_tmp_dist,
+        callCuda(cublasSgemv(cublas_handle, CUBLAS_OP_T, dim, center_count, &one, d_tmp_diff,
                              dim, d_one, 1, &zero, d_tmp_dist, 1));
+
         // get the minimal one
         callCuda(cublasIsamin(cublas_handle, center_count, d_tmp_dist, 1, &index));
-        allocation[i] = index;
+        allocation[i] = index - 1;
         cluster_size[allocation[i]]++;
     }
+
+    printCpuMatrix(cluster_size, 10, 1, 10, 0);
 
 }
 
@@ -133,29 +166,81 @@ void update_center() {
     float zero = 0;
 
     // update the allocation information
-    callCuda(cudaMemcpy(d_allocation_col, allocation, size_t(data_count), cudaMemcpyHostToDevice));
-    callCuda(cudaMemcpy(d_cluster_size, cluster_size, size_t(center_count), cudaMemcpyHostToDevice));
+    callCuda(cudaMemcpy(d_allocation_col, allocation, sizeof(int) * size_t(data_count), cudaMemcpyHostToDevice));
+    callCuda(cudaMemcpy(d_cluster_size, cluster_size, sizeof(float) * size_t(center_count), cudaMemcpyHostToDevice));
+
+    // Conversion test
+
+    float *tmp;
+    callCuda(cudaMalloc(&tmp, sizeof(float) * center_count * data_count));
+    callCuda(cusparseScsr2dense(cusparse_handle, center_count, data_count, d_allocation_descr, d_allocation_val, d_allocation_row, d_allocation_col, tmp, center_count));
+    //printGpuMatrix(tmp, center_count * data_count, center_count, data_count, 0);
+    callCuda(cublasSgemm(cublas_handle, CUBLAS_OP_T, CUBLAS_OP_T, center_count, dim, data_count, &one, tmp, data_count, d_data, dim, &zero, d_center_transpose, center_count));
 
     // compute the new center
+    /*
     callCuda(cusparseScsrmm2(cusparse_handle, CUSPARSE_OPERATION_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE,
                              data_count, dim, center_count, data_count, &one, d_allocation_descr, d_allocation_val,
                              d_allocation_row, d_allocation_col, d_data, dim, &zero, d_center_transpose,
                              center_count));
+                             */
     transpose_scale(d_center, dim, center_count, d_center_transpose, d_cluster_size);
+    callCuda(cudaMemcpy(center, d_center, sizeof(float) * dim * center_count, cudaMemcpyDeviceToHost));
 
 }
 
+void show_center() {
+
+    for (int i = 0; i < center_count; i++) {
+        cv::Mat m(28, 28, CV_32F, center + i * dim);
+        cv::Mat img;
+        m.convertTo(img, CV_8U);
+        cv::imshow("Image" + to_string(i), img);
+    }
+    cv::waitKey(0);
+
+}
+
+
 void k_mean(int iteration) {
-    initialize();
+
+    initialize_monoid();
+    //initialize_centroid();
+
+    show_center();
     for (int i = 0; i < iteration; i++) {
+        cout << "Iteration #" << i << endl;
         find_nearest_center();
         update_center();
+        show_center();
     }
+
 }
 
 int main(int argc, char** argv) {
 
+    input = "t10k-images.idx3-ubyte";
+    center_count = 10;
+
+    ifstream file(input);
+    int tmp, row, col;
+    read_int(file, &tmp);
+    read_int(file, &data_count);
+    read_int(file, &row);
+    read_int(file, &col);
+    dim = row * col;
+    uint8_t *_data = new uint8_t[dim * data_count];
+    read_bytes(file, _data, dim * data_count);
+    file.close();
+
+    data_count = 100;
+    assert(data_count >= center_count);
+
     data = new float[dim * data_count];
+    for (int i = 0; i < dim * data_count; i++)
+        data[i] = float(_data[i]);
+    delete[] _data;
+
     center = new float[dim * center_count];
     allocation = new int[data_count];
     cluster_size = new float[center_count];
@@ -166,22 +251,25 @@ int main(int argc, char** argv) {
     callCuda(cudaMalloc(&d_tmp_diff, sizeof(float) * dim * center_count));
     callCuda(cudaMalloc(&d_tmp_dist, sizeof(float) * center_count));
     callCuda(cudaMalloc(&d_allocation_val, sizeof(float) * data_count));
-    callCuda(cudaMalloc(&d_allocation_val, sizeof(int) * data_count));
-    callCuda(cudaMalloc(&d_allocation_val, sizeof(int) * data_count));
+    callCuda(cudaMalloc(&d_allocation_row, sizeof(int) * (data_count + 1))); // CRS format
+    callCuda(cudaMalloc(&d_allocation_col, sizeof(int) * data_count));
     callCuda(cudaMalloc(&d_cluster_size, sizeof(float) * center_count));
     callCuda(cudaMalloc(&d_one, sizeof(float) * max(data_count, max(dim, center_count)))); // long enough
 
     set_value(d_one, max(data_count, max(dim, center_count)), 1.0f);
 
     set_value(d_allocation_val, data_count, 1.0f);
-    set_sequence(d_allocation_row, data_count, 0, 1); // one 1 per row
+    set_sequence(d_allocation_row, data_count + 1, 0, 1); // one 1 per row
     set_value(d_allocation_col, data_count, 0);
 
     callCuda(cublasCreate(&cublas_handle));
     callCuda(cusparseCreate(&cusparse_handle));
 
     callCuda(cusparseCreateMatDescr(&d_allocation_descr));
+    callCuda(cusparseSetMatType(d_allocation_descr, CUSPARSE_MATRIX_TYPE_GENERAL));
+    callCuda(cusparseSetMatIndexBase(d_allocation_descr, CUSPARSE_INDEX_BASE_ZERO));
 
+    k_mean(10);
 
     callCuda(cusparseDestroyMatDescr(d_allocation_descr));
 
