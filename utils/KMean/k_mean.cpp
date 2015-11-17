@@ -22,13 +22,11 @@
 #include <sstream>
 #include <set>
 
-#ifdef CUDA_ENABLED
-
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
-#include <device_launch_parameters.h>
+#include <cusparse.h>
 
-#define BLOCK_SIZE 128
+#include "kernel.h"
 
 #define fatalError(s) do {                                             \
     std::stringstream _where, _message;                                \
@@ -47,37 +45,7 @@
     }                                                                  \
 } while(0)
 
-template <typename T>
-__device__ T square(const T x) {
-    return x * x;
-}
 
-template <typename T>
-__global__ void kernel_sequence(T *d_m, int n, T start, T step) {
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
-    if (i < n)
-        d_m[i] = start + step * i;
-}
-
-__global__ void kernal_set_value(float *d_m, int n, float value) {
-    int i = blockDim.x * blockIdx.x + threadIdx.x;
-    if (i < n)
-        d_m[i] = value;
-}
-
-__global__ void kernel_square_minus(float *d_center, float *point, float *d_diff) {
-    int id_center = blockIdx.x; // blockDim.x == dim && max(blockIdx.x) == center_count
-    int id_pos = threadIdx.x; // max(threadIdx.x) == dim
-    d_diff[id_center * blockDim.x + id_pos] = square(d_center[id_center * blockDim.x + id_pos] - point[id_pos]);
-}
-
-void set_value(float *d_m, int n, float value) {
-    kernal_set_value<<<(n - 1 + BLOCK_SIZE) / BLOCK_SIZE, BLOCK_SIZE>>>(d_m, n, value);
-}
-
-void set_sequence(int)
-
-#endif
 
 using namespace std;
 
@@ -87,18 +55,21 @@ int data_count; // number of vectors
 
 float *center; // centers of k-mean
 float *d_center; // device copy of centers
-float *d_tmp_diff; // temporary array to calculate the nearest neighbor
+float *d_center_transpose; // temporary matrix
+float *d_tmp_diff; // temporary matrix to calculate the nearest neighbor
 float *d_tmp_dist; // temporary array to store distance
 int center_count; // number of centers (k)
 
-int *allocation; // index of all vectors (one dimension array)
-float *d_allocation_val; // allocation result of all vectors (sparse matrix)
-float *d_allocation_row; // row numbers (sparse matrix)
-float *d_allocation_col; // column numbers (sparse matrix)
+int *allocation; // index of all vectors (one dimension array), same as d_allocation_col
+
+cusparseMatDescr_t d_allocation_descr;
+float *d_allocation_val; // allocation result of all vectors (sparse matrix of 0 or 1)
+int *d_allocation_row; // row numbers (from 0 to data_count)
+int *d_allocation_col; // column numbers (from 0 to center_count)
 
 
-int *cluster_size; // size of all clusters
-int *d_cluster_size; // device copy
+float *cluster_size; // size of all clusters
+float *d_cluster_size; // device copy
 
 float *d_one; // all one vector (the length is large enough)
 
@@ -106,7 +77,8 @@ int dim; // vector dimension
 
 string input, output; // file name
 
-cublasHandle_t handle;
+cublasHandle_t cublas_handle;
+cusparseHandle_t cusparse_handle;
 
 void initialize() {
 
@@ -134,6 +106,9 @@ void initialize() {
 
 void find_nearest_center() {
 
+    // clear previous allocation status
+    fill(cluster_size, cluster_size + center_count, 0);
+
     // find nearest neighbor for all data vectors
     float one = 1;
     float zero = 0;
@@ -141,17 +116,32 @@ void find_nearest_center() {
 
     for (int i = 0; i < data_count; i++) {
         // compute the distance
-        kernel_square_minus<<<center_count, dim>>>(d_center, d_data[i * dim], d_tmp_diff);
-        callCuda(cublasSgemv(handle, CUBLAS_OP_N, dim, center_count, &one, d_tmp_dist,
+        square_minus(d_center, dim, center_count, d_data + i * dim, d_tmp_diff);
+        callCuda(cublasSgemv(cublas_handle, CUBLAS_OP_N, dim, center_count, &one, d_tmp_dist,
                              dim, d_one, 1, &zero, d_tmp_dist, 1));
         // get the minimal one
-        callCuda(cublasIsamin(handle, center_count, d_tmp_dist, 1, &index));
+        callCuda(cublasIsamin(cublas_handle, center_count, d_tmp_dist, 1, &index));
         allocation[i] = index;
+        cluster_size[allocation[i]]++;
     }
 
 }
 
 void update_center() {
+
+    float one = 1;
+    float zero = 0;
+
+    // update the allocation information
+    callCuda(cudaMemcpy(d_allocation_col, allocation, size_t(data_count), cudaMemcpyHostToDevice));
+    callCuda(cudaMemcpy(d_cluster_size, cluster_size, size_t(center_count), cudaMemcpyHostToDevice));
+
+    // compute the new center
+    callCuda(cusparseScsrmm2(cusparse_handle, CUSPARSE_OPERATION_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE,
+                             data_count, dim, center_count, data_count, &one, d_allocation_descr, d_allocation_val,
+                             d_allocation_row, d_allocation_col, d_data, dim, &zero, d_center_transpose,
+                             center_count));
+    transpose_scale(d_center, dim, center_count, d_center_transpose, d_cluster_size);
 
 }
 
@@ -168,29 +158,39 @@ int main(int argc, char** argv) {
     data = new float[dim * data_count];
     center = new float[dim * center_count];
     allocation = new int[data_count];
-    cluster_size = new int[center_count];
+    cluster_size = new float[center_count];
 
     callCuda(cudaMalloc(&d_data, sizeof(float) * dim * data_count));
     callCuda(cudaMalloc(&d_center, sizeof(float) * dim * center_count));
+    callCuda(cudaMalloc(&d_center_transpose, sizeof(float) * center_count * dim));
     callCuda(cudaMalloc(&d_tmp_diff, sizeof(float) * dim * center_count));
     callCuda(cudaMalloc(&d_tmp_dist, sizeof(float) * center_count));
     callCuda(cudaMalloc(&d_allocation_val, sizeof(float) * data_count));
     callCuda(cudaMalloc(&d_allocation_val, sizeof(int) * data_count));
     callCuda(cudaMalloc(&d_allocation_val, sizeof(int) * data_count));
-    callCuda(cudaMalloc(&d_cluster_size, sizeof(int) * center_count));
+    callCuda(cudaMalloc(&d_cluster_size, sizeof(float) * center_count));
     callCuda(cudaMalloc(&d_one, sizeof(float) * max(data_count, max(dim, center_count)))); // long enough
 
-    set_value(d_one, max(data_count, max(dim, center_count)), 1);
-    set_value(d_allocation_val, data_count, 1);
+    set_value(d_one, max(data_count, max(dim, center_count)), 1.0f);
 
-    callCuda(cublasCreate(&handle));
+    set_value(d_allocation_val, data_count, 1.0f);
+    set_sequence(d_allocation_row, data_count, 0, 1); // one 1 per row
+    set_value(d_allocation_col, data_count, 0);
+
+    callCuda(cublasCreate(&cublas_handle));
+    callCuda(cusparseCreate(&cusparse_handle));
+
+    callCuda(cusparseCreateMatDescr(&d_allocation_descr));
 
 
+    callCuda(cusparseDestroyMatDescr(d_allocation_descr));
 
-    callCuda(cublasDestroy(handle));
+    callCuda(cusparseDestroy(cusparse_handle));
+    callCuda(cublasDestroy(cublas_handle));
 
     callCuda(cudaFree(d_data));
     callCuda(cudaFree(d_center));
+    callCuda(cudaFree(d_center_transpose));
     callCuda(cudaFree(d_tmp_diff));
     callCuda(cudaFree(d_tmp_dist));
     callCuda(cudaFree(d_allocation_val));
