@@ -8,7 +8,27 @@
 #define KERNEL_H
 
 #include <ctime>
+#include <iostream>
+#include <sstream>
 #include <curand.h>
+#include <cuda_runtime.h>
+
+#define fatalError(s) do {                                             \
+    std::stringstream _where, _message;                                \
+    _where << __FILE__ << ':' << __LINE__;                             \
+    _message << std::string(s) + "\n" << __FILE__ << ':' << __LINE__;  \
+    std::cerr << _message.str() << "\nAborting...\n";                  \
+    cudaDeviceReset();                                                 \
+    exit(1);                                                           \
+} while(0)
+
+#define callCuda(status) do {                                  		   \
+    std::stringstream _error;                                          \
+    if (status != 0) {                                                 \
+    	_error << "Cuda failure: " << status;                          \
+    	fatalError(_error.str());                                      \
+    }                                                                  \
+} while(0)
 
 void set_value(float *d_m, int n, float value);
 void set_value(int *d_m, int n, int value);

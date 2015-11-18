@@ -46,8 +46,6 @@ __global__ void kernel_transpose_scale(T *d_center, int n, int m, T *d_center_tm
         else
             d_center[row + m * col] = d_center_tmp[row * n + col];
     }
-
-
 }
 
 template <typename T>
@@ -58,11 +56,17 @@ __global__ void scale(T* x, int n, T epsilon) {
 }
 
 void set_value(float *d_m, int n, float value) {
-    kernal_set_value<<<(n - 1 + BLOCK_SIZE) / BLOCK_SIZE, BLOCK_SIZE>>>(d_m, n, value);
+    if (value == 0)
+        callCuda(cudaMemset(d_m, 0, sizeof(float) * n));
+    else
+        kernal_set_value<<<(n - 1 + BLOCK_SIZE) / BLOCK_SIZE, BLOCK_SIZE>>>(d_m, n, value);
 }
 
 void set_value(int *d_m, int n, int value) {
-    kernal_set_value<<<(n - 1 + BLOCK_SIZE) / BLOCK_SIZE, BLOCK_SIZE>>>(d_m, n, value);
+    if (value == 0)
+        callCuda(cudaMemset(d_m, 0, sizeof(int) * n));
+    else
+        kernal_set_value<<<(n - 1 + BLOCK_SIZE) / BLOCK_SIZE, BLOCK_SIZE>>>(d_m, n, value);
 }
 
 void set_sequence(int *d_m, int n, int start, int step) {

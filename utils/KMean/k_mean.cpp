@@ -33,23 +33,6 @@
 #include "kernel.h"
 #include "read_data.h"
 
-#define fatalError(s) do {                                             \
-    std::stringstream _where, _message;                                \
-    _where << __FILE__ << ':' << __LINE__;                             \
-    _message << std::string(s) + "\n" << __FILE__ << ':' << __LINE__;  \
-    std::cerr << _message.str() << "\nAborting...\n";                  \
-    cudaDeviceReset();                                                 \
-    exit(1);                                                           \
-} while(0)
-
-#define callCuda(status) do {                                  		   \
-    std::stringstream _error;                                          \
-    if (status != 0) {                                                 \
-    	_error << "Cuda failure: " << status;                          \
-    	fatalError(_error.str());                                      \
-    }                                                                  \
-} while(0)
-
 using namespace std;
 
 float *data; // data to be clustered (vectors are stored line after line)
@@ -72,7 +55,6 @@ int *d_allocation_col_csr; // column numbers (from 0 to center_count)
 float *d_allocation_val_csc; // csc is just the transpose in some way
 int *d_allocation_row_csc; // this one still store the pointer
 int *d_allocation_col_csc;
-
 
 float *cluster_size; // size of all clusters
 float *d_cluster_size; // device copy
@@ -104,7 +86,6 @@ void printGpuMatrix(T* d_m, int n, int r, int c, int precision) {
     printCpuMatrix(m, n, r, c, precision);
     delete[] m;
 }
-
 
 void initialize_monoid() {
 
@@ -174,7 +155,7 @@ void update_center() {
     callCuda(cudaMemcpy(d_allocation_col_csr, allocation, sizeof(int) * size_t(data_count), cudaMemcpyHostToDevice));
     callCuda(cudaMemcpy(d_cluster_size, cluster_size, sizeof(float) * size_t(center_count), cudaMemcpyHostToDevice));
 
-    // Conversion method, use dense matrix
+    // conversion method, use dense matrix
     /*
     float *tmp;
     callCuda(cudaMalloc(&tmp, sizeof(float) * center_count * data_count));
@@ -191,6 +172,7 @@ void update_center() {
                               d_allocation_row_csc, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO));
 
     // compute the new center
+    // attention: while the second matrix is transposed, the first one should be normal
     callCuda(cusparseScsrmm2(cusparse_handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE,
                              center_count, dim, data_count, data_count, &one, d_allocation_descr, d_allocation_val_csc,
                              d_allocation_row_csc, d_allocation_col_csc, d_data, dim, &zero, d_center_transpose,
@@ -221,14 +203,14 @@ void k_mean(int iteration) {
 
     initialize_monoid();
     //initialize_centroid();
-    print_center();
+
+    //print_center();
     //show_center();
     for (int i = 0; i < iteration; i++) {
         cout << "Iteration #" << i << endl;
         find_nearest_center();
         update_center();
         print_center();
-
         //show_center();
     }
 
