@@ -20,7 +20,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <set>
+#include <unordered_set>
 #include <iomanip>
 
 #include <opencv2/highgui/highgui.hpp>
@@ -107,13 +107,14 @@ void initialize_monoid() {
 
     // select k different centers
 
-    set<int> selected;
+    unordered_set<int> selected;
     while (selected.size() < center_count) // different
         selected.insert(rand() % data_count);
 
     // copy theirs coordinates
     int column = 0;
     for (int i: selected) {
+        cout << i << endl;
         for (int j = 0; j < dim; j++)
             center[column * dim + j] = data[i * dim + j];
         column++;
@@ -124,6 +125,7 @@ void initialize_monoid() {
     callCuda(cudaMemcpy(d_data, data, sizeof(float) * dim * data_count, cudaMemcpyHostToDevice));
     callCuda(cudaMemcpy(d_center, center, sizeof(float) * dim * center_count, cudaMemcpyHostToDevice));
 
+    printGpuMatrix(d_center, 4, 2, 2, 0);
 }
 
 void initialize_centroid() {
@@ -147,16 +149,19 @@ void find_nearest_center() {
     for (int i = 0; i < data_count; i++) {
         // compute the distance
         square_minus(d_center, dim, center_count, d_data + i * dim, d_tmp_diff);
+        //printGpuMatrix(d_tmp_diff, 4, 2, 2, 0);
         callCuda(cublasSgemv(cublas_handle, CUBLAS_OP_T, dim, center_count, &one, d_tmp_diff,
                              dim, d_one, 1, &zero, d_tmp_dist, 1));
 
         // get the minimal one
         callCuda(cublasIsamin(cublas_handle, center_count, d_tmp_dist, 1, &index));
+        //printGpuMatrix(d_tmp_dist, 2, 1, 2, 0);
         allocation[i] = index - 1;
         cluster_size[allocation[i]]++;
     }
 
-    printCpuMatrix(cluster_size, 10, 1, 10, 0);
+    printCpuMatrix(cluster_size, 2, 1, 2, 0);
+    printCpuMatrix(allocation, 8, 1, 8, 0);
 
 }
 
@@ -168,25 +173,27 @@ void update_center() {
     // update the allocation information
     callCuda(cudaMemcpy(d_allocation_col, allocation, sizeof(int) * size_t(data_count), cudaMemcpyHostToDevice));
     callCuda(cudaMemcpy(d_cluster_size, cluster_size, sizeof(float) * size_t(center_count), cudaMemcpyHostToDevice));
-
     // Conversion test
-
+    printGpuMatrix(d_data, 16, 2, 8, 0);
     float *tmp;
     callCuda(cudaMalloc(&tmp, sizeof(float) * center_count * data_count));
-    callCuda(cusparseScsr2dense(cusparse_handle, center_count, data_count, d_allocation_descr, d_allocation_val, d_allocation_row, d_allocation_col, tmp, center_count));
-    //printGpuMatrix(tmp, center_count * data_count, center_count, data_count, 0);
-    callCuda(cublasSgemm(cublas_handle, CUBLAS_OP_T, CUBLAS_OP_T, center_count, dim, data_count, &one, tmp, data_count, d_data, dim, &zero, d_center_transpose, center_count));
-
+    callCuda(cusparseScsr2dense(cusparse_handle, data_count, center_count, d_allocation_descr, d_allocation_val, d_allocation_row, d_allocation_col, tmp, data_count));
+    printGpuMatrix(tmp, center_count * data_count, data_count, center_count, 0);
+    callCuda(cublasSgemm(cublas_handle, CUBLAS_OP_T, CUBLAS_OP_T, center_count, dim, data_count, &one, tmp,
+                         data_count, d_data, dim, &zero, d_center_transpose, center_count));
+    callCuda(cudaFree(tmp));
     // compute the new center
-    /*
-    callCuda(cusparseScsrmm2(cusparse_handle, CUSPARSE_OPERATION_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE,
-                             data_count, dim, center_count, data_count, &one, d_allocation_descr, d_allocation_val,
+
+    printGpuMatrix(d_center_transpose, 4, 2, 2, 1);
+
+    callCuda(cusparseScsrmm2(cusparse_handle, CUSPARSE_OPERATION_NON_TRANSPOSE, CUSPARSE_OPERATION_TRANSPOSE,
+                             2, dim, 2, 2, &one, d_allocation_descr, d_allocation_val,
                              d_allocation_row, d_allocation_col, d_data, dim, &zero, d_center_transpose,
                              center_count));
-                             */
+
     transpose_scale(d_center, dim, center_count, d_center_transpose, d_cluster_size);
     callCuda(cudaMemcpy(center, d_center, sizeof(float) * dim * center_count, cudaMemcpyDeviceToHost));
-
+    printGpuMatrix(d_center, 4, 2, 2, 1);
 }
 
 void show_center() {
@@ -207,18 +214,18 @@ void k_mean(int iteration) {
     initialize_monoid();
     //initialize_centroid();
 
-    show_center();
+    //show_center();
     for (int i = 0; i < iteration; i++) {
         cout << "Iteration #" << i << endl;
         find_nearest_center();
         update_center();
-        show_center();
+        //show_center();
     }
 
 }
 
 int main(int argc, char** argv) {
-
+    /*
     input = "t10k-images.idx3-ubyte";
     center_count = 10;
 
@@ -232,14 +239,36 @@ int main(int argc, char** argv) {
     uint8_t *_data = new uint8_t[dim * data_count];
     read_bytes(file, _data, dim * data_count);
     file.close();
+    */
+    data_count = 8;
+    center_count = 2;
+    dim = 2;
 
-    data_count = 100;
     assert(data_count >= center_count);
 
     data = new float[dim * data_count];
+    data[0] = 0;
+    data[1] = 0;
+    data[2] = 1;
+    data[3] = 0;
+    data[4] = 1;
+    data[5] = 1;
+    data[6] = 0;
+    data[7] = 1;
+    data[8] = 10;
+    data[9] = 10;
+    data[10] = 11;
+    data[11] = 10;
+    data[12] = 11;
+    data[13] = 11;
+    data[14] = 10;
+    data[15] = 11;
+    /*
     for (int i = 0; i < dim * data_count; i++)
         data[i] = float(_data[i]);
     delete[] _data;
+    */
+
 
     center = new float[dim * center_count];
     allocation = new int[data_count];
@@ -250,9 +279,9 @@ int main(int argc, char** argv) {
     callCuda(cudaMalloc(&d_center_transpose, sizeof(float) * center_count * dim));
     callCuda(cudaMalloc(&d_tmp_diff, sizeof(float) * dim * center_count));
     callCuda(cudaMalloc(&d_tmp_dist, sizeof(float) * center_count));
-    callCuda(cudaMalloc(&d_allocation_val, sizeof(float) * data_count));
+    callCuda(cudaMalloc(&d_allocation_val, sizeof(float) * (data_count)));
     callCuda(cudaMalloc(&d_allocation_row, sizeof(int) * (data_count + 1))); // CRS format
-    callCuda(cudaMalloc(&d_allocation_col, sizeof(int) * data_count));
+    callCuda(cudaMalloc(&d_allocation_col, sizeof(int) * (data_count)));
     callCuda(cudaMalloc(&d_cluster_size, sizeof(float) * center_count));
     callCuda(cudaMalloc(&d_one, sizeof(float) * max(data_count, max(dim, center_count)))); // long enough
 
@@ -269,7 +298,7 @@ int main(int argc, char** argv) {
     callCuda(cusparseSetMatType(d_allocation_descr, CUSPARSE_MATRIX_TYPE_GENERAL));
     callCuda(cusparseSetMatIndexBase(d_allocation_descr, CUSPARSE_INDEX_BASE_ZERO));
 
-    k_mean(10);
+    k_mean(2);
 
     callCuda(cusparseDestroyMatDescr(d_allocation_descr));
 
