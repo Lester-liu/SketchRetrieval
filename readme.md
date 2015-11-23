@@ -9,6 +9,16 @@ This project is based on Mathias Eitz's paper "[Sketch-Based Shape Retrieval](ht
 The idea is quite simple, 3D models are complex and can not be given directly to any machine learning mecanisms. So, instead of using the whole
 model, we use different views of the model. Then we summarize the view with words using K-Mean and run a SVM on these bags of features.
 
+## Interesting components
+
+This repository contains some modules that can be used in other jobs.
+
+1. K-Mean with CUDA (CuBLAS, CuSPARSE, etc.)
+2. Gabor filter
+3. Contour extractor
+4. PLY 3D model to 2D image with different angles
+5. OFF to PLY convertor
+
 ## How to use
 
 To run this code, you will need:
