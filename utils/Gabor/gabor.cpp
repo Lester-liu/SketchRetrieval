@@ -14,10 +14,10 @@
  *      l[lambda]: wavelength of the sinusoidal factor
  *      g[gamma]: spatial aspect ratio
  *      i: input image
- *      o: output image folder (with '/' in the end)
+ *      o: output file
  *
  * Usage:
- *      gabor -k [k] -n [n] -s [sigma] -t [theta] -l [lambda] -b [beta] -f [Path_to_input] -t [Path_to_output]
+ *      gabor -k [k] -n [n] -s [sigma] -t [theta] -l [lambda] -b [beta] -i [Path_to_input] -o [Path_to_output]
  */
 
 #include <iostream>
@@ -58,8 +58,7 @@ void output_result(string output) {
 
     for(vector<uchar> v: result) {
         for(uchar u: v)
-            out << u;
-        out << endl;
+            out.write((char*)&u,sizeof(uchar));
     }
 
     out.close();
@@ -138,6 +137,21 @@ bool parse_command_line(int argc, char **argv) {
     return true;
 }
 
+void show_mat(Mat &m){
+    for(int i = 0; i < m.rows; i++){
+        for(int j = 0; j < m.cols; j++){
+            cout << m.at<float>(i,j) << ' ';
+        }
+        cout << endl;
+    }
+}
+
+void show_middle_row(Mat &m){
+    for(int i = 0; i < m.cols; i++)
+        cout << m.at<float>(m.rows/2,i) <<' ';
+    cout << endl;
+}
+
 int main(int argc, char** argv) {
 
     if (!parse_command_line(argc, argv))
@@ -153,7 +167,10 @@ int main(int argc, char** argv) {
         Mat kernel = getGaborKernel(Size(kernel_size, kernel_size), sigma,
                                     theta + step * (double)i, lambda, beta, CV_PI * 0.5, CV_32F);
         filter2D(src, filters[i], -1, kernel, Point(-1, -1), 0, BORDER_DEFAULT);
-        filters[i].convertTo(filters[i], CV_8U, 255.0);
+
+        double mini,maxi;
+        minMaxLoc(filters[i],&mini,&maxi);
+        filters[i].convertTo(filters[i], CV_8U, 255.0/(maxi - mini), -mini * 255.0/(maxi - mini));
     }
 
     int row_gap = img.rows / ((int)sqrt(point_count));

@@ -3,26 +3,22 @@
 #include <vector>
 #include <sstream>
 #include <opencv2/highgui/highgui.hpp>
-#include <set>
-#include <opencv2/imgproc/imgproc.hpp>
 
 using namespace std;
 using namespace cv;
 
 const int lines = 1000;
-const int file_number = 10;
-const int n = 100;
 const int size = 128;
-string input, binpath,output;
+string input, bin_path, output;
 
+int line_number;
+uint8_t *result;
 
-set<string> result;
-
-bool totalBlack(string val, int size){
-    int i = 0;
+bool same_color(unsigned char *val){
+    int i = 1;
+    int k = (int)(val[0]);
     while(i < size) {
-        //cout << (int) ((unsigned char) val[i]) << ' ';
-        if ((int) ((unsigned char) val[i]) != 0)
+        if (((int)val[i]) != k)
             return false;
         i++;
     }
@@ -30,18 +26,22 @@ bool totalBlack(string val, int size){
 }
 
 
-void getVectors(string file){
-    ifstream in(file.c_str());
-    int k = 0;
-    string s;
-    while(k < n && getline(in,s)){
-        if (!totalBlack(s,size)){
-            result.insert(s);
-            k++;
+void get_vectors(string file){
+    ifstream in(file);
+    uint8_t* val = new uint8_t[size];
+
+    while(line_number < lines && (!in.eof())){
+        in.read((char*)val,size);
+        if (!same_color(val)){
+            for(int i = 0; i < size; i++)
+                result[line_number * size + i] = val[i];
+            line_number++;
         }
     }
+    delete[] val;
     in.close();
 }
+
 
 int main(int argc, char** argv) {
 
@@ -50,27 +50,32 @@ int main(int argc, char** argv) {
     ss >> input;
     ss.clear();
     ss << argv[2];
-    ss >> binpath;
+    ss >> bin_path;
     ss.clear();
     ss << argv[3];
     ss >> output;
 
     ifstream in(input);
-    string s;
-    int size;
-    for( int i = 0; i < file_number; i++){
-        in >> s >> size;
-        s = s.substr(0,s.length()-4);
-        //cout << binpath+s << endl;
-        getVectors(binpath+s);
+    int tmp;
+    line_number = 0;
+    string file_name;
+
+    result = new uint8_t[lines * size];
+
+    while(line_number < lines){
+        in >> file_name >> tmp;
+        file_name = file_name.substr(0,file_name.length()-4);
+        get_vectors(bin_path + file_name);
     }
 
-    ofstream out(output.c_str());
+    ofstream out(output);
 
-    cout << result.size() <<' ';
-    for(string s:result){
-        out << s <<endl;
-    }
+    out.write((char*)&line_number, sizeof(int));
+    out.write((char*)&size, sizeof(int));
+    out.write((char*)result, sizeof(uint8_t) * size * line_number);
+
     out.close();
+
+    delete[] result;
     return 0;
 }

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # One folders with PNG format files and one folder to the contour
+#gabor_filter.sh ../../../data/Sketch/pipeline/contour/ ../../../data/Sketch/pipeline/bin/
 
 Files="$1"
 Dest_Folder="$2"
@@ -13,7 +14,7 @@ do
     rm -rf "$Dest_Folder$Dest_Folder_Name/";
     mkdir "$Dest_Folder$Dest_Folder_Name/";
 
-    for Src in $Folder*
+    for Src in $Folder*.png
     do
             #echo $Src
             # Get the file name (after the last '/')
