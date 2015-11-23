@@ -11,7 +11,7 @@ INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 
 add_definitions(-D CUDA_ENABLED)
 
-CUDA_ADD_EXECUTABLE(k_mean k_mean_test.cpp k_mean.cpp kernel.cu read_data.cpp)
+CUDA_ADD_EXECUTABLE(k_mean k_mean_main.cpp k_mean.cpp kernel.cu read_data.cpp)
 
 LIST(APPEND CMAKE_CXX_FLAGS "-std=c++0x -ffast-math ")
 
