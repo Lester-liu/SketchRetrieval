@@ -1,75 +1,13 @@
-/*
- * K-mean clustering
- *
- * This program implements the K-Mean clustering method. It takes a set of points (lines in a binary file) and
- * returns the group number of each point and an extra file to describe the group, namely the group center.
- *
- * Usage: k_mean [Path_to_file] Number_of_center
- *
- * N.B. The file format is very specific, it is a binary file with integers and floats, so please pay attention to the
- * big / little endian problem. You may want to generate the file by program in case of theses sorts of problems.
- * The first number is the number of points: N, the second is the dimension of the point: d. Then there should
- * be N * d float numbers after. So the binary file looks like:
- *
- *      N (32 bits integer) d (32 bits integer)
- *      P_1 (d * 32 bits float)
- *      ...
- *      P_N (d * 32 bits float)
- */
+//
+// Created by lyx on 17/11/15.
+//
 
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <unordered_set>
-#include <iomanip>
-
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-
-#include <cuda_runtime.h>
-#include <cublas_v2.h>
-#include <cusparse.h>
-
-#include "kernel.h"
-#include "read_data.h"
+#include "k_mean.h"
 
 using namespace std;
 
-float *data; // data to be clustered (vectors are stored line after line)
-float *d_data; // device copy of data
-int data_count; // number of vectors
-
-float *center; // centers of k-mean
-float *d_center; // device copy of centers
-float *d_center_transpose; // temporary matrix
-float *d_tmp_diff; // temporary matrix to calculate the nearest neighbor
-float *d_tmp_dist; // temporary array to store distance
-int center_count; // number of centers (k)
-
-int *allocation; // index of all vectors (one dimension array), same as d_allocation_col_csr
-
-cusparseMatDescr_t d_allocation_descr;
-float *d_allocation_val_csr; // allocation result of all vectors (sparse matrix of 0 or 1)
-int *d_allocation_row_csr; // row numbers (from 0 to data_count)
-int *d_allocation_col_csr; // column numbers (from 0 to center_count)
-float *d_allocation_val_csc; // csc is just the transpose in some way
-int *d_allocation_row_csc; // this one still store the pointer
-int *d_allocation_col_csc;
-
-float *cluster_size; // size of all clusters
-float *d_cluster_size; // device copy
-
-float *d_one; // all one vector (the length is large enough)
-
-int dim; // vector dimension
-
-string input, output; // file name
-
-cublasHandle_t cublas_handle;
-cusparseHandle_t cusparse_handle;
-
-template <typename T>
-void printCpuMatrix(T* m, int n, int r, int c, int precision) {
+template<typename T>
+void printCpuMatrix(T *m, int n, int r, int c, int precision) {
     cout << "Size: " << r << " * " << c << endl;
     for (int i = 0; i < r; i++) {
         for (int j = 0; j < c; j++)
@@ -79,15 +17,15 @@ void printCpuMatrix(T* m, int n, int r, int c, int precision) {
     cout << endl;
 }
 
-template <typename T>
-void printGpuMatrix(T* d_m, int n, int r, int c, int precision) {
-    T* m = new T[n];
+template<typename T>
+void printGpuMatrix(T *d_m, int n, int r, int c, int precision) {
+    T *m = new T[n];
     cublasGetVector(n, sizeof(*m), d_m, 1, m, 1);
     printCpuMatrix(m, n, r, c, precision);
     delete[] m;
 }
 
-void initialize_monoid() {
+void K_Mean::initialize_monoid() {
 
     // select k different centers
     unordered_set<int> selected;
@@ -109,7 +47,7 @@ void initialize_monoid() {
 
 }
 
-void initialize_centroid() {
+void K_Mean::initialize_centroid() {
 
     set_uniform_value(d_center, dim * center_count, 256);
     callCuda(cudaMemcpy(d_data, data, sizeof(float) * dim * data_count, cudaMemcpyHostToDevice));
@@ -117,7 +55,7 @@ void initialize_centroid() {
 
 }
 
-void find_nearest_center() {
+void K_Mean::find_nearest_center() {
 
     // clear previous allocation status
     fill(cluster_size, cluster_size + center_count, 0);
@@ -146,7 +84,7 @@ void find_nearest_center() {
 
 }
 
-void update_center() {
+void K_Mean::update_center() {
 
     float one = 1;
     float zero = 0;
@@ -183,7 +121,7 @@ void update_center() {
 
 }
 
-void show_center() {
+void K_Mean::show_center() {
 
     for (int i = 0; i < center_count; i++) {
         cv::Mat m(28, 28, CV_32F, center + i * dim);
@@ -195,11 +133,11 @@ void show_center() {
 
 }
 
-void print_center() {
+void K_Mean::print_center() {
     printCpuMatrix(center, dim * center_count, dim, center_count, 1);
 }
 
-void k_mean(int iteration) {
+void K_Mean::execute(int iteration) {
 
     initialize_monoid();
     //initialize_centroid();
@@ -216,59 +154,14 @@ void k_mean(int iteration) {
 
 }
 
-int main(int argc, char** argv) {
-    /*
-    input = "t10k-images.idx3-ubyte";
-    center_count = 10;
+K_Mean::K_Mean(float *_data, int _data_count, int _dim, int _center_count) {
 
-    ifstream file(input);
-    int tmp, row, col;
-    read_int(file, &tmp);
-    read_int(file, &data_count);
-    read_int(file, &row);
-    read_int(file, &col);
-    dim = row * col;
-    uint8_t *_data = new uint8_t[dim * data_count];
-    read_bytes(file, _data, dim * data_count);
-    file.close();
-    */
-    data_count = 12;
-    center_count = 3;
-    dim = 2;
+    data = _data;
+    data_count = _data_count;
+    center_count = _center_count;
+    dim = _dim;
 
     assert(data_count >= center_count);
-
-    data = new float[dim * data_count];
-    data[0] = 0;
-    data[1] = 0;
-    data[2] = 1;
-    data[3] = 0;
-    data[4] = 1;
-    data[5] = 1;
-    data[6] = 0;
-    data[7] = 1;
-    data[8] = 10;
-    data[9] = 10;
-    data[10] = 11;
-    data[11] = 10;
-    data[12] = 11;
-    data[13] = 11;
-    data[14] = 10;
-    data[15] = 11;
-    data[16] = 10;
-    data[17] = 0;
-    data[18] = 11;
-    data[19] = 0;
-    data[20] = 11;
-    data[21] = 1;
-    data[22] = 10;
-    data[23] = 1;
-    /*
-    for (int i = 0; i < dim * data_count; i++)
-        data[i] = float(_data[i]);
-    delete[] _data;
-    */
-
 
     center = new float[dim * center_count];
     allocation = new int[data_count];
@@ -301,8 +194,9 @@ int main(int argc, char** argv) {
     callCuda(cusparseSetMatType(d_allocation_descr, CUSPARSE_MATRIX_TYPE_GENERAL));
     callCuda(cusparseSetMatIndexBase(d_allocation_descr, CUSPARSE_INDEX_BASE_ZERO));
 
-    k_mean(10);
+}
 
+K_Mean::~K_Mean() {
     callCuda(cusparseDestroyMatDescr(d_allocation_descr));
 
     callCuda(cusparseDestroy(cusparse_handle));
@@ -321,11 +215,4 @@ int main(int argc, char** argv) {
     callCuda(cudaFree(d_allocation_col_csc));
     callCuda(cudaFree(d_cluster_size));
     callCuda(cudaFree(d_one));
-
-    delete[] data;
-    delete[] center;
-    delete[] allocation;
-    delete[] cluster_size;
-
-    return EXIT_SUCCESS;
 }
