@@ -12,23 +12,6 @@ int k = 1000;
 
 string input,output;
 string filenames[40];
-vector<vector<unsigned char> > result;
-
-bool totalBlack(string s){
-    int i = 0;
-    return true;
-}
-
-void getVectors(int n, string file){
-    ifstream input(file);
-    int k = 0, line = 0;
-    string lines;
-    while(k < n && line < 1000){
-        getline(input,lines);
-
-    }
-
-}
 
 int areaCalculate(string filename){
     Mat img = imread(filename);
@@ -64,7 +47,6 @@ int main(int argc, char** argv) {
     vector<pair<int,string> > dic;
 
     for(int i = 0; i < size; i++){
-        //cout << (input+filenames[i]);
         if (filenames[i][0] == '.')
             continue;
         int k = areaCalculate((input + filenames[i]).c_str());
