@@ -40,55 +40,64 @@
 
 using namespace std;
 
-class K_Mean {
+namespace k_mean {
 
-private:
+    class K_Mean {
 
-    float *data; // data to be clustered (vectors are stored line after line)
-    float *d_data; // device copy of data
-    int data_count; // number of vectors
+    private:
 
-    float *center; // centers of k-mean
-    float *d_center; // device copy of centers
-    float *d_center_transpose; // temporary matrix
-    float *d_tmp_diff; // temporary matrix to calculate the nearest neighbor
-    float *d_tmp_dist; // temporary array to store distance
-    int center_count; // number of centers (k)
+        float *data; // data to be clustered (vectors are stored line after line)
+        float *d_data; // device copy of data
+        int data_count; // number of vectors
 
-    int *allocation; // index of all vectors (one dimension array), same as d_allocation_col_csr
+        float *center; // centers of k-mean
+        float *d_center; // device copy of centers
+        float *d_center_transpose; // temporary matrix
+        float *d_tmp_diff; // temporary matrix to calculate the nearest neighbor
+        float *d_tmp_dist; // temporary array to store distance
+        int center_count; // number of centers (k)
 
-    cusparseMatDescr_t d_allocation_descr;
-    float *d_allocation_val_csr; // allocation result of all vectors (sparse matrix of 0 or 1)
-    int *d_allocation_row_csr; // row numbers (from 0 to data_count)
-    int *d_allocation_col_csr; // column numbers (from 0 to center_count)
-    float *d_allocation_val_csc; // csc is just the transpose in some way
-    int *d_allocation_row_csc; // this one still store the pointer
-    int *d_allocation_col_csc;
+        int *allocation; // index of all vectors (one dimension array), same as d_allocation_col_csr
 
-    float *cluster_size; // size of all clusters
-    float *d_cluster_size; // device copy
+        cusparseMatDescr_t d_allocation_descr;
+        float *d_allocation_val_csr; // allocation result of all vectors (sparse matrix of 0 or 1)
+        int *d_allocation_row_csr; // row numbers (from 0 to data_count)
+        int *d_allocation_col_csr; // column numbers (from 0 to center_count)
+        float *d_allocation_val_csc; // csc is just the transpose in some way
+        int *d_allocation_row_csc; // this one still store the pointer
+        int *d_allocation_col_csc;
 
-    float *d_one; // all one vector (the length is large enough)
+        float *cluster_size; // size of all clusters
+        float *d_cluster_size; // device copy
 
-    int dim; // vector dimension
+        float *d_one; // all one vector (the length is large enough)
 
-    cublasHandle_t cublas_handle;
-    cusparseHandle_t cusparse_handle;
+        int dim; // vector dimension
 
-    void initialize_monoid();
-    void initialize_centroid();
-    void find_nearest_center();
-    void update_center();
-    void show_center();
-    void print_center();
+        cublasHandle_t cublas_handle;
+        cusparseHandle_t cusparse_handle;
 
-public:
+        void initialize_monoid();
 
-    K_Mean(float* data, int data_count, int dim, int center_count);
-    virtual ~K_Mean();
-    void execute(int iteration);
+        void initialize_centroid();
 
+        void find_nearest_center();
 
-};
+        void update_center();
+
+        void shake_center(float delta);
+
+        void print_center();
+
+    public:
+
+        K_Mean(float *data, int data_count, int dim, int center_count);
+
+        virtual ~K_Mean();
+
+        void execute(int iteration, float delta);
+
+    };
+}
 
 #endif //K_MEAN_H

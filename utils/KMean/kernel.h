@@ -35,6 +35,8 @@ void set_value(int *d_m, int n, int value);
 void set_sequence(int *d_m, int n, int start, int step);
 void transpose_scale(float *d_center, int n, int m, float *d_center_transpose, float *d_cluster_size);
 void square_minus(float *d_center, int n, int m, float *d_point, float *d_diff);
+void set_uniform_value(float* d_m, int n, float min, float max);
 void set_uniform_value(float* d_m, int n, float epsilon);
+void shake(float *d_m, float *d_scale ,int n);
 
 #endif //KERNEL_H

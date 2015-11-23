@@ -4,6 +4,8 @@
 
 #include "k_mean.h"
 
+using namespace k_mean;
+
 void test_2d() {
 
     int data_count = 12;
@@ -39,7 +41,7 @@ void test_2d() {
     data[23] = 1;
 
     K_Mean model(data, data_count, dim, center_count);
-    model.execute(10);
+    model.execute(10, 0.1);
 
     delete[] data;
 
@@ -65,5 +67,6 @@ void test_mnist() {
 }
 
 int main() {
+    srand(time(NULL));
     test_2d();
 }
