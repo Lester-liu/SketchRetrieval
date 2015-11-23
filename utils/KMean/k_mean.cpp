@@ -138,28 +138,6 @@ namespace k_mean {
         printCpuMatrix(center, dim * center_count, dim, center_count, 3);
     }
 
-    void K_Mean::execute(int iteration, float delta) {
-
-        initialize_monoid();
-        //initialize_centroid();
-
-        print_center();
-        //show_center();
-        for (int i = 0; i < iteration; i++) {
-            //cout << "Iteration #" << i << endl;
-            shake_center(delta);
-            callCuda(cudaMemcpy(center, d_center, sizeof(float) * dim * center_count, cudaMemcpyDeviceToHost));
-            print_center();
-            find_nearest_center();
-            update_center();
-            print_center();
-            //show_center();
-        }
-
-        print_center();
-
-    }
-
     K_Mean::K_Mean(float *_data, int _data_count, int _dim, int _center_count) {
 
         data = _data;
@@ -221,6 +199,35 @@ namespace k_mean {
         callCuda(cudaFree(d_allocation_col_csc));
         callCuda(cudaFree(d_cluster_size));
         callCuda(cudaFree(d_one));
+    }
+
+    void K_Mean::execute(int iteration, float delta) {
+
+        initialize_monoid();
+        //initialize_centroid();
+
+        print_center();
+        //show_center();
+        for (int i = 0; i < iteration; i++) {
+            //cout << "Iteration #" << i << endl;
+            shake_center(delta);
+            //callCuda(cudaMemcpy(center, d_center, sizeof(float) * dim * center_count, cudaMemcpyDeviceToHost));
+            //print_center();
+            find_nearest_center();
+            update_center();
+            //print_center();
+        }
+
+        print_center();
+
+    }
+
+    void save(string file) {
+        ofstream out(output);
+        out.write((char*)&center_count, sizeof(int));
+        out.write((char*)&dim, sizeof(int));
+        out.write((char*)center, sizeof(float) * dim * center_count);
+        out.close();
     }
 
 }
