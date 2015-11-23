@@ -60,29 +60,29 @@ namespace k_mean {
         cublasHandle_t cublas_handle;
         cusparseHandle_t cusparse_handle;
 
-        void initialize_monoid();
+        void initialize_monoid(); // use existing points as centers
 
-        void initialize_centroid();
+        void initialize_centroid(); // use random centers
 
         void find_nearest_center();
 
-        void update_center();
+        void update_center(); // compute the new barycenter of the group
 
-        void shake_center(float delta);
+        void shake_center(float delta); // move a little the existing center to leave local minimum
 
         void print_center();
 
     public:
 
-        K_Mean(float *data, int data_count, int dim, int center_count);
+        K_Mean(float *data, int data_count, int dim, int center_count); // train a clustering function
 
         K_Mean(float *data, float* center, int dim, int center_count); // classify an image with a dictionary
 
         virtual ~K_Mean();
 
-        void execute(int iteration, float delta);
+        void execute(int iteration, float delta); // train
 
-        void save(string file);
+        void save(string file); // save the center information into a file
 
         int get_cluster(int i); // get cluster number of the i-th vector
 

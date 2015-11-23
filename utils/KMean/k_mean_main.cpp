@@ -23,12 +23,19 @@
  *      P_N (d * 32 bits float)
  *
  * Parameters:
- *      f: gabor features of an image file
+ *      f: Gabor features of an image file
  *      t: output binary file
  *      d: dictionary to be used
  *
  * Usage 2:
  *      k_mean -f [Path_to_input] -t [Path_to_output] -d [Path_to_dictionary]
+ *
+ * Parameters:
+ *      f: file containing all Gabor features files name
+ *      d: dictionary to be used
+ *
+ * Usage 3:
+ *      k_mean -f [Path_to_file] -d [Path_to_dictionary]
  */
 
 #include "k_mean.h"
