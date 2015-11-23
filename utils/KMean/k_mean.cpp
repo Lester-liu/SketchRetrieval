@@ -79,7 +79,7 @@ namespace k_mean {
             cluster_size[allocation[i]]++;
         }
 
-        //printCpuMatrix(cluster_size, center_count, 1, center_count, 0);
+        printCpuMatrix(cluster_size, center_count, 1, center_count, 0);
         //printCpuMatrix(allocation, data_count, 1, data_count, 0);
 
     }
@@ -180,6 +180,46 @@ namespace k_mean {
 
     }
 
+    K_Mean::K_Mean(float *_data, float* _center, int _dim, int _center_count) {
+
+        data = _data;
+        data_count = 1;
+        center_count = _center_count;
+        dim = _dim;
+
+        center = _center;
+        allocation = new int[data_count];
+        cluster_size = new float[center_count];
+
+        callCuda(cudaMalloc(&d_data, sizeof(float) * dim * data_count));
+        callCuda(cudaMalloc(&d_center, sizeof(float) * dim * center_count));
+        callCuda(cudaMalloc(&d_center_transpose, sizeof(float) * center_count * dim));
+        callCuda(cudaMalloc(&d_tmp_diff, sizeof(float) * dim * center_count));
+        callCuda(cudaMalloc(&d_tmp_dist, sizeof(float) * center_count));
+        callCuda(cudaMalloc(&d_allocation_val_csr, sizeof(float) * (data_count)));
+        callCuda(cudaMalloc(&d_allocation_row_csr, sizeof(int) * (data_count + 1))); // CRS format
+        callCuda(cudaMalloc(&d_allocation_col_csr, sizeof(int) * (data_count)));
+        callCuda(cudaMalloc(&d_allocation_val_csc, sizeof(float) * (data_count)));
+        callCuda(cudaMalloc(&d_allocation_col_csc, sizeof(int) * (data_count))); // CRS format
+        callCuda(cudaMalloc(&d_allocation_row_csc, sizeof(int) * (center_count + 1)));
+        callCuda(cudaMalloc(&d_cluster_size, sizeof(float) * center_count));
+        callCuda(cudaMalloc(&d_one, sizeof(float) * max(data_count, max(dim, center_count)))); // long enough
+
+        set_value(d_one, max(data_count, max(dim, center_count)), 1.0f);
+
+        set_value(d_allocation_val_csr, data_count, 1.0f);
+        set_sequence(d_allocation_row_csr, data_count + 1, 0, 1); // one 1 per row
+        set_value(d_allocation_col_csr, data_count, 0);
+
+        callCuda(cublasCreate(&cublas_handle));
+        callCuda(cusparseCreate(&cusparse_handle));
+
+        callCuda(cusparseCreateMatDescr(&d_allocation_descr));
+        callCuda(cusparseSetMatType(d_allocation_descr, CUSPARSE_MATRIX_TYPE_GENERAL));
+        callCuda(cusparseSetMatIndexBase(d_allocation_descr, CUSPARSE_INDEX_BASE_ZERO));
+
+    }
+
     K_Mean::~K_Mean() {
         callCuda(cusparseDestroyMatDescr(d_allocation_descr));
 
@@ -222,12 +262,17 @@ namespace k_mean {
 
     }
 
-    void save(string file) {
-        ofstream out(output);
+    void K_Mean::save(string file) {
+        ofstream out(file);
         out.write((char*)&center_count, sizeof(int));
         out.write((char*)&dim, sizeof(int));
         out.write((char*)center, sizeof(float) * dim * center_count);
         out.close();
+    }
+
+    int K_Mean::get_cluster(int i) {
+        find_nearest_center();
+        return allocation[0];
     }
 
 }

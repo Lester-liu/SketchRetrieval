@@ -78,11 +78,15 @@ namespace k_mean {
 
         K_Mean(float *data, int data_count, int dim, int center_count);
 
+        K_Mean(float *data, float* center, int dim, int center_count); // classify an image with a dictionary
+
         virtual ~K_Mean();
 
         void execute(int iteration, float delta);
 
         void save(string file);
+
+        int get_cluster(int i); // get cluster number of the i-th vector
 
     };
 }

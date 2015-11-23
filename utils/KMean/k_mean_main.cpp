@@ -4,7 +4,13 @@
  * This program implements the K-Mean clustering method. It takes a set of points (lines in a binary file) and
  * returns the group number of each point and an extra file to describe the group, namely the group center.
  *
- * Usage: k_mean -f [Path_to_file] -k Number_of_center -t [Path_to_output_file]
+ * Parameters:
+ *      f: local features to be clustered
+ *      k: number of cluster
+ *      t: path to the output dictionary
+ *
+ * Usage 1:
+ *      k_mean -f [Path_to_file] -k Number_of_center -t [Path_to_output_file]
  *
  * N.B. The file format is very specific, it is a binary file with integers and floats, so please pay attention to the
  * big / little endian problem. You may want to generate the file by program in case of theses sorts of problems.
@@ -15,11 +21,23 @@
  *      P_1 (d * 32 bits float)
  *      ...
  *      P_N (d * 32 bits float)
+ *
+ * Parameters:
+ *      f: gabor features of an image file
+ *      t: output binary file
+ *      d: dictionary to be used
+ *
+ * Usage 2:
+ *      k_mean -f [Path_to_input] -t [Path_to_output] -d [Path_to_dictionary]
  */
 
 #include "k_mean.h"
 
 using namespace k_mean;
+
+enum Mode {Testing, Training}; // Testing for usage 2, Training for usage 1
+
+Mode mode = Testing;
 
 string input, output;
 int center_count, data_count, dim;
@@ -27,13 +45,13 @@ float *data;
 
 void test_2d() {
 
-    int data_count = 12;
-    int center_count = 3;
-    int dim = 2;
+    data_count = 12;
+    center_count = 3;
+    dim = 2;
 
     assert(data_count >= center_count);
 
-    float *data = new float[dim * data_count];
+    data = new float[dim * data_count];
     data[0] = 0;
     data[1] = 0;
     data[2] = 1;
@@ -67,13 +85,14 @@ void test_2d() {
 }
 
 void read_file() {
-    ifstream input(file.c_str());
-    input >> data_count;
-    input >> dim;
+    ifstream in(input);
+    in >> data_count;
+    in >> dim;
     data = new float[data_count*dim];
     string s;
+    getline(in, s);
     for(int i = 0; i < data_count; i++){
-        getline(input,s);
+        getline(in, s);
         for(int j = 0; j < s.length(); j++){
             data[dim*i+j] = (float)((int)((unsigned char)s[j]));
         }
@@ -81,7 +100,7 @@ void read_file() {
 }
 
 void test_mnist() {
-    /*
+
     input = "t10k-images.idx3-ubyte";
     center_count = 10;
 
@@ -95,11 +114,27 @@ void test_mnist() {
     uint8_t *_data = new uint8_t[dim * data_count];
     read_bytes(file, _data, dim * data_count);
     file.close();
-    */
+
+    data = new float[dim * data_count];
+    for (int i = 0; i < dim * data_count; i++)
+        data[i] = float(_data[i]);
+
+    K_Mean model(data, data_count, dim, center_count);
+    model.execute(100, 0.05);
+
+    delete[] data;
 
 }
 
 int main() {
     srand(time(NULL));
-    test_2d();
+    //test_2d();
+    test_mnist();
+    /*
+    input = "test_k_mean.bin";
+    read_file();
+    for (int i = 0; i < 128; i++) {
+        cout << data[i] << endl;
+    }
+    delete[] data;*/
 }
