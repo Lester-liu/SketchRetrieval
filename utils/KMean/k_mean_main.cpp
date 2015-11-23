@@ -23,6 +23,7 @@ using namespace k_mean;
 
 string input, output;
 int center_count, data_count, dim;
+float *data;
 
 void test_2d() {
 
@@ -63,6 +64,20 @@ void test_2d() {
 
     delete[] data;
 
+}
+
+void read_file() {
+    ifstream input(file.c_str());
+    input >> data_count;
+    input >> dim;
+    data = new float[data_count*dim];
+    string s;
+    for(int i = 0; i < data_count; i++){
+        getline(input,s);
+        for(int j = 0; j < s.length(); j++){
+            data[dim*i+j] = (float)((int)((unsigned char)s[j]));
+        }
+    }
 }
 
 void test_mnist() {
