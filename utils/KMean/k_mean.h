@@ -12,9 +12,7 @@
 #include <sstream>
 #include <unordered_set>
 #include <iomanip>
-
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
+#include <cassert>
 
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
@@ -87,6 +85,8 @@ namespace k_mean {
         void save(string file);
 
         int get_cluster(int i); // get cluster number of the i-th vector
+
+        void get_clusters(float *dest); // get center coordinates
 
     };
 }

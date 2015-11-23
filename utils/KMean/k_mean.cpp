@@ -79,7 +79,7 @@ namespace k_mean {
             cluster_size[allocation[i]]++;
         }
 
-        printCpuMatrix(cluster_size, center_count, 1, center_count, 0);
+        //printCpuMatrix(cluster_size, center_count, 1, center_count, 0);
         //printCpuMatrix(allocation, data_count, 1, data_count, 0);
 
     }
@@ -246,8 +246,7 @@ namespace k_mean {
         initialize_monoid();
         //initialize_centroid();
 
-        print_center();
-        //show_center();
+        //print_center();
         for (int i = 0; i < iteration; i++) {
             //cout << "Iteration #" << i << endl;
             shake_center(delta);
@@ -258,7 +257,7 @@ namespace k_mean {
             //print_center();
         }
 
-        print_center();
+        //print_center();
 
     }
 
@@ -273,6 +272,10 @@ namespace k_mean {
     int K_Mean::get_cluster(int i) {
         find_nearest_center();
         return allocation[0];
+    }
+
+    void K_Mean::get_clusters(float *dest) {
+        callCuda(cudaMemcpy(dest, d_center, sizeof(float) * dim * center_count, cudaMemcpyHostToHost));
     }
 
 }

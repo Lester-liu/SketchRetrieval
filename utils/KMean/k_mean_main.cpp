@@ -33,7 +33,11 @@
 
 #include "k_mean.h"
 
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 using namespace k_mean;
+using namespace cv;
 
 enum Mode {Testing, Training}; // Testing for usage 2, Training for usage 1
 
@@ -84,21 +88,6 @@ void test_2d() {
 
 }
 
-void read_file() {
-    ifstream in(input);
-    in >> data_count;
-    in >> dim;
-    data = new float[data_count*dim];
-    string s;
-    getline(in, s);
-    for(int i = 0; i < data_count; i++){
-        getline(in, s);
-        for(int j = 0; j < s.length(); j++){
-            data[dim*i+j] = (float)((int)((unsigned char)s[j]));
-        }
-    }
-}
-
 void test_mnist() {
 
     input = "t10k-images.idx3-ubyte";
@@ -120,10 +109,37 @@ void test_mnist() {
         data[i] = float(_data[i]);
 
     K_Mean model(data, data_count, dim, center_count);
-    model.execute(100, 0.05);
+    model.execute(50, 0.05);
 
+    float *center = new float[dim * center_count];
+    model.get_clusters(center);
+
+    for (int i = 0; i < center_count; i++) {
+        Mat m(row, col, CV_32F, center + i * dim);
+        Mat img;
+        m.convertTo(img, CV_8U);
+        imshow("Image" + to_string(i), img);
+    }
+    waitKey(0);
+
+    delete[] center;
     delete[] data;
 
+}
+
+void read_file() {
+    ifstream in(input);
+    in >> data_count;
+    in >> dim;
+    data = new float[data_count*dim];
+    string s;
+    getline(in, s);
+    for(int i = 0; i < data_count; i++){
+        getline(in, s);
+        for(int j = 0; j < s.length(); j++){
+            data[dim*i+j] = (float)((int)((unsigned char)s[j]));
+        }
+    }
 }
 
 int main() {
