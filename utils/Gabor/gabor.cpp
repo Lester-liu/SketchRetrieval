@@ -40,28 +40,37 @@ double lambda = 10.0;
 double beta = 0.5;
 
 vector<Mat> filters(k);
-vector<vector<uchar> > result;
+vector<float*> result;
 
-vector<uchar> getVector(int x, int y) {
-    vector<uchar> result;
+float* get_vector(int x, int y) {
 
+    float* res = new float[k * window_size * window_size];
+
+    int d = 0;
     for(int i = 0; i < k; i++)
         for(int u = 0; u < window_size; u++)
             for(int v = 0; v < window_size; v++)
-                result.push_back(filters[i].at<uchar>(u + x, v + y));
+                res[d++] = filters[i].at<float>(u + x, v + y);
+    return res;
 
-    return result;
 }
 
 void output_result(string output) {
     ofstream out(output);
+    int result_size = result.size();
+    int dimension = k * window_size * window_size;
 
-    for(vector<uchar> v: result) {
-        for(uchar u: v)
-            out.write((char*)&u,sizeof(uchar));
+    out.write((char*)&result_size, sizeof(int));
+    out.write((char*)&dimension, sizeof(int));
+
+    for(float* v: result) {
+        out.write((char*)v,sizeof(float) * dimension);
     }
 
     out.close();
+
+    for(float* v: result)
+        delete[] v;
 }
 
 void show_help() {
@@ -168,9 +177,9 @@ int main(int argc, char** argv) {
                                     theta + step * (double)i, lambda, beta, CV_PI * 0.5, CV_32F);
         filter2D(src, filters[i], -1, kernel, Point(-1, -1), 0, BORDER_DEFAULT);
 
-        double mini,maxi;
-        minMaxLoc(filters[i],&mini,&maxi);
-        filters[i].convertTo(filters[i], CV_8U, 255.0/(maxi - mini), -mini * 255.0/(maxi - mini));
+        //double mini,maxi;
+        //minMaxLoc(filters[i],&mini,&maxi);
+        //filters[i].convertTo(filters[i], CV_8U, 255.0/(maxi - mini), -mini * 255.0/(maxi - mini));
     }
 
     int row_gap = img.rows / ((int)sqrt(point_count));
@@ -179,10 +188,11 @@ int main(int argc, char** argv) {
     for(int i = 0; i < img.rows; i += row_gap){
         for(int j = 0; j < img.cols; j += col_gap){
             if (i + window_size < img.rows && j + window_size < img.cols)
-                result.push_back(getVector(i, j));
+                result.push_back(get_vector(i, j));
         }
     }
 
+    //cout << result.size() << endl;
     output_result(output);
     cout << "succeed!" << endl;
     return 0;
