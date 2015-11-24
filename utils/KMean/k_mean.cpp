@@ -180,10 +180,10 @@ namespace k_mean {
 
     }
 
-    K_Mean::K_Mean(float *_data, float* _center, int _dim, int _center_count) {
+    K_Mean::K_Mean(float *_data, float* _center, int _data_count, int _dim, int _center_count) {
 
         data = _data;
-        data_count = 1;
+        data_count = _data_count;
         center_count = _center_count;
         dim = _dim;
 
@@ -269,9 +269,9 @@ namespace k_mean {
         out.close();
     }
 
-    int K_Mean::get_cluster(int i) {
+    void K_Mean::translate(int *result) {
         find_nearest_center();
-        return allocation[0];
+        callCuda(cudaMemcpy(result, allocation, sizeof(int) * data_count, cudaMemcpyHostToHost));
     }
 
     void K_Mean::get_clusters(float *dest) {

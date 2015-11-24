@@ -76,7 +76,7 @@ namespace k_mean {
 
         K_Mean(float *data, int data_count, int dim, int center_count); // train a clustering function
 
-        K_Mean(float *data, float* center, int dim, int center_count); // classify an image with a dictionary
+        K_Mean(float *data, float* center, int data_count, int dim, int center_count); // classify an image with a dictionary
 
         virtual ~K_Mean();
 
@@ -84,7 +84,7 @@ namespace k_mean {
 
         void save(string file); // save the center information into a file
 
-        int get_cluster(int i); // get cluster number of the i-th vector
+        void translate(int *result); // get cluster number of all vectors
 
         void get_clusters(float *dest); // get center coordinates
 

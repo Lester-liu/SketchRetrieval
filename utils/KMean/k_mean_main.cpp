@@ -27,7 +27,7 @@
  *
  * Parameters:
  *      f: Gabor features of an image file (line + dim + data in float)
- *      t: output binary file
+ *      t: output binary file (vector of index (int))
  *      d: dictionary to be used
  *      s: size of the value: 8 for uint8_t, 32 for float
  *
@@ -35,7 +35,7 @@
  *      k_mean -f [Path_to_input] -t [Path_to_output] -d [Path_to_dictionary] -s [8|32]
  *
  * Parameters:
- *      f: file containing all Gabor features files name
+ *      f: file containing all Gabor features files name (line + names, text file)
  *      d: dictionary to be used
  *      s: size of the value: 8 for uint8_t, 32 for float
  *
@@ -45,11 +45,7 @@
 
 #include "k_mean.h"
 
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-
 using namespace k_mean;
-using namespace cv;
 
 enum Mode {Group_Testing, Testing, Training}; // Group_Testing for usage 3, Testing for usage 2, Training for usage 1
 enum Format {Integer, Float}; // format of initial data
@@ -154,9 +150,59 @@ void training() {
 
 void group_testing() {
 
+
+
 }
 
 void testing() {
+
+    ifstream in(input);
+    read_int(in, &data_count); // read meta-info
+    read_int(in, &dim);
+
+    // read data
+    if (format == Integer) {
+        uint8_t *_data = new uint8_t[dim * data_count];
+        read_bytes(in, _data, dim * data_count);
+
+        data = new float[dim * data_count];
+        for (int i = 0; i < dim * data_count; i++)
+            data[i] = float(_data[i]);
+
+        delete[] _data;
+    }
+    else {
+        data = new float[dim * data_count];
+        read_floats(in, data, dim * data_count);
+    }
+
+    in.close();
+
+    // read the dictionary
+    ifstream dir(dictionary);
+    read_int(dir, &center_count); // read meta-info
+    read_int(dir, &dim); // should be the same
+
+    float *center = new float[dim * center_count];
+    read_floats(dir, center, dim * center_count);
+
+    dir.close();
+
+    // build the model
+    K_Mean model(data, center, data_count, dim, center_count);
+
+    // translate the local features into words
+    int *allocation = new int[data_count];
+    model.translate(allocation);
+
+    ofstream out(output);
+    out.write((char*)&dim, sizeof(int));
+    out.write((char*)allocation, sizeof(int) * data_count);
+    out.close();
+
+    delete[] allocation;
+    delete[] data;
+    delete[] center;
 
 }
 
