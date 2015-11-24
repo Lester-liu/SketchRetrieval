@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <dirent.h>
 #include <vector>
@@ -14,12 +15,15 @@ string input,output;
 string filenames[40];
 
 int areaCalculate(string filename){
-    Mat img = imread(filename);
-    //img.convertTo(img,CV_8U,255);
+    Mat img = imread(filename,CV_LOAD_IMAGE_GRAYSCALE);
+    //double mini, maxi;
+    //minMaxLoc(img, &mini, &maxi);
+    //img.convertTo(img,CV_8U, 255.0/(maxi - mini), -mini * 255.0/(maxi - mini));
+    //cout << mini <<' ' << maxi <<endl;
     int area = 0;
-    for(int i = 0; i < img.cols; i++){
+    for(int i = 0; i < img.rows; i++){
         for(int j = 0; j < img.cols; j++){
-            if ((int)img.at<uchar>(i,j) != 0 )
+            if ((img.at<uchar>(i,j)) != 0 )
                 area++;
         }
     }
@@ -47,9 +51,11 @@ int main(int argc, char** argv) {
     vector<pair<int,string> > dic;
 
     for(int i = 0; i < size; i++){
-        if (filenames[i][0] == '.')
+        if (filenames[i][0] != 'm')
             continue;
         int k = areaCalculate((input + filenames[i]).c_str());
+        if (k == 0)
+            cout << (input + filenames[i]).c_str() << endl;
         dic.push_back(make_pair(k,filenames[i]));
     }
     sort(dic.begin(),dic.end());

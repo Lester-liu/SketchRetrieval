@@ -6,19 +6,18 @@
 
 using namespace std;
 using namespace cv;
-
 const int lines = 1000;
 const int size = 128;
+
 string input, bin_path, output;
-
 int line_number;
-uint8_t *result;
+float *result;
 
-bool same_color(unsigned char *val){
+bool same_color(float *val){
     int i = 1;
-    int k = (int)(val[0]);
+    int k = val[0];
     while(i < size) {
-        if (((int)val[i]) != k)
+        if (abs(val[i] - k) > 5)
             return false;
         i++;
     }
@@ -28,8 +27,12 @@ bool same_color(unsigned char *val){
 
 void get_vectors(string file){
     ifstream in(file);
-    uint8_t* val = new uint8_t[size];
 
+    int a,b;
+    in.read((char*)&a,sizeof(int));
+    in.read((char*)&b, sizeof(int));
+
+    float* val = new float[size];
     while(line_number < lines && (!in.eof())){
         in.read((char*)val,size);
         if (!same_color(val)){
@@ -60,7 +63,7 @@ int main(int argc, char** argv) {
     line_number = 0;
     string file_name;
 
-    result = new uint8_t[lines * size];
+    result = new float[lines * size];
 
     while(line_number < lines){
         in >> file_name >> tmp;
@@ -72,7 +75,7 @@ int main(int argc, char** argv) {
 
     out.write((char*)&line_number, sizeof(int));
     out.write((char*)&size, sizeof(int));
-    out.write((char*)result, sizeof(uint8_t) * size * line_number);
+    out.write((char*)result, sizeof(float) * size * line_number);
 
     out.close();
 
