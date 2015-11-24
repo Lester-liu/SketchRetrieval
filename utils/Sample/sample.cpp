@@ -1,7 +1,10 @@
+/*
+ *
+ */
+
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <sstream>
 #include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
@@ -48,15 +51,9 @@ void get_vectors(string file){
 
 int main(int argc, char** argv) {
 
-    stringstream ss;
-    ss << argv[1];
-    ss >> input;
-    ss.clear();
-    ss << argv[2];
-    ss >> bin_path;
-    ss.clear();
-    ss << argv[3];
-    ss >> output;
+    input = argv[1];
+    bin_path = argv[2];
+    output = argv[3];
 
     ifstream in(input);
     int tmp;
@@ -67,7 +64,7 @@ int main(int argc, char** argv) {
 
     while(line_number < lines){
         in >> file_name >> tmp;
-        file_name = file_name.substr(0,file_name.length()-4);
+        file_name = file_name.substr(0, file_name.length() - 4);
         get_vectors(bin_path + file_name);
     }
 
@@ -80,5 +77,5 @@ int main(int argc, char** argv) {
     out.close();
 
     delete[] result;
-    return 0;
+    return EXIT_SUCCESS;
 }
