@@ -150,7 +150,7 @@ void training() {
     model.execute(iteration, delta);
 
     // save the dictionary
-    model.save(dictionary);
+    model.save(dictionary, false);
 
     delete[] data;
 

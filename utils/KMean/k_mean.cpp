@@ -263,9 +263,16 @@ namespace k_mean {
 
     void K_Mean::save(string file, bool add_null) {
         ofstream out(file);
-        if (add_null)
+
+        // add a all zero center
+        if (add_null) {
             center_count++;
-        out.write((char*)&center_count, sizeof(int));
+            out.write((char *)&center_count, sizeof(int));
+            center_count--;
+        }
+        else
+            out.write((char*)&center_count, sizeof(int));
+
         out.write((char*)&dim, sizeof(int));
         out.write((char*)center, sizeof(float) * dim * center_count);
         if (add_null) {
