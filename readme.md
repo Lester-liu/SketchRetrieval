@@ -13,7 +13,7 @@ model, we use different views of the model. Then we summarize the view with word
 
 This repository contains some modules that can be used in other jobs.
 
-1. K-Mean with CUDA (CuBLAS, CuSPARSE, etc.)
+1. K-Means with CUDA (CuBLAS, CuSPARSE, etc.)
 2. Gabor filter
 3. Contour extractor
 4. PLY 3D model to 2D image with different angles
