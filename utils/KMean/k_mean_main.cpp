@@ -35,9 +35,16 @@
  *      k_mean -f [Path_to_input] -t [Path_to_output] -d [Path_to_dictionary] -s [8|32]
  *
  * Parameters:
- *      f: file containing all Gabor features files name (line + names, text file)
+ *      f: file containing all Gabor features files name (cases + line per case + names, text file)
  *      d: dictionary to be used
  *      s: size of the value: 8 for uint8_t, 32 for float
+ *
+ * Output: translated images:
+ *
+ *      Line_Count (32 bits integer) Dimension (32 bits integer)
+ *      Image_1 (Dimension * 32 bits int)
+ *      ...
+ *      Image_Line_Count (Dimension * 32 bits)
  *
  * Usage 3 (Group_Testing):
  *      k_mean -f [Path_to_file] -d [Path_to_dictionary] -s [8|32]
@@ -150,7 +157,69 @@ void training() {
 
 void group_testing() {
 
+    int cases;
+    ifstream in(input);
+    in >> cases;
+    in >> data_count;
 
+    // read the dictionary
+    ifstream dir(dictionary);
+    read_int(dir, &center_count); // read meta-info
+    read_int(dir, &dim); // should be the same
+
+    float *center = new float[dim * center_count];
+    read_floats(dir, center, dim * center_count);
+
+    dir.close();
+
+    data = new float[dim * data_count];
+    int *allocation = new int[data_count];
+
+    // prepare the output file
+    ofstream out(input + ".trans");
+    out.write((char*)&cases, sizeof(int));
+    out.write((char*)&dim, sizeof(int));
+
+    K_Mean model(data, center, data_count, dim, center_count);
+
+    string file;
+    for (int i = 0; i < cases; i++) {
+        in >> file;
+
+        ifstream f(file);
+        read_int(f, &data_count); // read meta-info
+        read_int(f, &dim);
+
+        // read data
+        if (format == Integer) {
+            uint8_t *_data = new uint8_t[dim * data_count];
+            read_bytes(f, _data, dim * data_count);
+
+            for (int i = 0; i < dim * data_count; i++)
+                data[i] = float(_data[i]);
+
+            delete[] _data;
+        }
+        else {
+            read_floats(f, data, dim * data_count);
+        }
+
+        f.close();
+
+        // replace the data with new image
+        model.update_data();
+        // translate the local features into words
+        model.translate(allocation);
+
+        out.write((char*)allocation, sizeof(int) * data_count);
+    }
+
+    in.close();
+    out.close();
+
+    delete[] center;
+    delete[] data;
+    delete[] allocation;
 
 }
 

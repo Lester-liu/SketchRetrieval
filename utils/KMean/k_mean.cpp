@@ -278,4 +278,8 @@ namespace k_mean {
         callCuda(cudaMemcpy(dest, d_center, sizeof(float) * dim * center_count, cudaMemcpyHostToHost));
     }
 
+    void K_Mean::update_data() {
+        callCuda(cudaMemcpy(d_data, data, sizeof(float) * dim * data_count, cudaMemcpyHostToDevice));
+    }
+
 }

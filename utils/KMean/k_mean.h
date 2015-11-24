@@ -88,6 +88,8 @@ namespace k_mean {
 
         void get_clusters(float *dest); // get center coordinates
 
+        void update_data();
+
     };
 }
 
