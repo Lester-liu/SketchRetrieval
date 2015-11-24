@@ -248,7 +248,7 @@ namespace k_mean {
 
         //print_center();
         for (int i = 0; i < iteration; i++) {
-            //cout << "Iteration #" << i << endl;
+            cout << "Iteration #" << i << endl;
             shake_center(delta);
             //callCuda(cudaMemcpy(center, d_center, sizeof(float) * dim * center_count, cudaMemcpyDeviceToHost));
             //print_center();
@@ -261,11 +261,19 @@ namespace k_mean {
 
     }
 
-    void K_Mean::save(string file) {
+    void K_Mean::save(string file, bool add_null) {
         ofstream out(file);
+        if (add_null)
+            center_count++;
         out.write((char*)&center_count, sizeof(int));
         out.write((char*)&dim, sizeof(int));
         out.write((char*)center, sizeof(float) * dim * center_count);
+        if (add_null) {
+            float *tmp = new float[dim];
+            fill(tmp, tmp + dim, 0);
+            out.write((char*)tmp, sizeof(float) * dim);
+            delete[] tmp;
+        }
         out.close();
     }
 

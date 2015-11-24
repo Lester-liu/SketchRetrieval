@@ -82,7 +82,7 @@ namespace k_mean {
 
         void execute(int iteration, float delta); // train
 
-        void save(string file); // save the center information into a file
+        void save(string file, bool add_null = true); // save the center information into a file
 
         void translate(int *result); // get cluster number of all vectors
 

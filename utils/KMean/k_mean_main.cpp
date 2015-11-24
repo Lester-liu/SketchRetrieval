@@ -146,6 +146,7 @@ void training() {
 
     // train the model
     K_Mean model(data, data_count, dim, center_count);
+    //cout << data_count << ' ' << dim << ' ' << center_count << endl;
     model.execute(iteration, delta);
 
     // save the dictionary
@@ -183,7 +184,7 @@ void group_testing() {
     K_Mean model(data, center, data_count, dim, center_count);
 
     string file;
-    for (int i = 0; i < cases; i++) {
+    for (int z = 0; z < cases; z++) {
         in >> file;
 
         ifstream f(file);
@@ -263,6 +264,12 @@ void testing() {
     // translate the local features into words
     int *allocation = new int[data_count];
     model.translate(allocation);
+
+    /*
+    for (int i = 0; i < data_count; i++)
+        cout << allocation[i] << ' ';
+    cout << endl;
+    */
 
     ofstream out(output);
     out.write((char*)&dim, sizeof(int));
