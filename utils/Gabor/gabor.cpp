@@ -31,41 +31,45 @@ using namespace cv;
 string input, output;
 
 int kernel_size = 15;
-int k = 8;
-int window_size = 4;
+int k = 8; // number of directions for Gabor filter
+int window_size = 4; // local feature area (not size)
 int point_count = 1000;
 double sigma = 4;
 double theta = 0;
 double lambda = 10.0;
 double beta = 0.5;
 
-vector<Mat> filters(k);
-vector<float*> result;
+vector<Mat> filters(k); // k filters
+vector<float*> result; // matrix representing the image
 
+// get local feature for a specific point
 float* get_vector(int x, int y) {
 
-    float* res = new float[k * window_size * window_size];
+    float* res = new float[k * window_size * window_size]; // size of one local feature
 
     int d = 0;
-    for(int i = 0; i < k; i++)
+    for(int i = 0; i < k; i++) // iterate over all filters
         for(int u = 0; u < window_size; u++)
             for(int v = 0; v < window_size; v++)
                 res[d++] = filters[i].at<float>(u + x, v + y);
+
+    // return a pointer, need to call delete
     return res;
 
 }
 
-void output_result(string output) {
+
+void save(string output) {
+
     ofstream out(output);
-    int result_size = result.size();
+    int lines = result.size(); // number of local features per image
     int dimension = k * window_size * window_size;
 
-    out.write((char*)&result_size, sizeof(int));
+    out.write((char*)&lines, sizeof(int));
     out.write((char*)&dimension, sizeof(int));
 
-    for(float* v: result) {
-        out.write((char*)v,sizeof(float) * dimension);
-    }
+    for(float* v: result)
+        out.write((char*)v, sizeof(float) * dimension);
 
     out.close();
 
@@ -98,7 +102,6 @@ void show_help() {
 
 bool parse_command_line(int argc, char **argv) {
     int i = 1;
-    stringstream ss;
     while(i < argc) {
         if (argv[i][0] != '-')
             break;
@@ -128,13 +131,10 @@ bool parse_command_line(int argc, char **argv) {
                 beta = atof(argv[++i]);
                 break;
             case 'i': // input file
-                ss << argv[++i];
-                ss >> input;
-                ss.clear();
+                input = argv[++i];
                 break;
             case 'o': // output file
-                ss << argv[++i];
-                ss >> output;
+                output = argv[++i];
                 break;
         }
         i++;
@@ -148,16 +148,15 @@ bool parse_command_line(int argc, char **argv) {
 
 void show_mat(Mat &m){
     for(int i = 0; i < m.rows; i++){
-        for(int j = 0; j < m.cols; j++){
-            cout << m.at<float>(i,j) << ' ';
-        }
+        for(int j = 0; j < m.cols; j++)
+            cout << m.at<float>(i, j) << ' ';
         cout << endl;
     }
 }
 
 void show_middle_row(Mat &m){
     for(int i = 0; i < m.cols; i++)
-        cout << m.at<float>(m.rows/2,i) <<' ';
+        cout << m.at<float>(m.rows / 2, i) << ' ';
     cout << endl;
 }
 
@@ -166,34 +165,29 @@ int main(int argc, char** argv) {
     if (!parse_command_line(argc, argv))
         return 0;
 
-    Mat img = imread(input);
+    Mat img = imread(input, CV_LOAD_IMAGE_GRAYSCALE);
     Mat src;
     img.convertTo(src, CV_32F);
 
     double step = CV_PI / k;
 
+    // build all Gabor filters
     for(int i = 0; i < k; i++) {
         Mat kernel = getGaborKernel(Size(kernel_size, kernel_size), sigma,
                                     theta + step * (double)i, lambda, beta, CV_PI * 0.5, CV_32F);
         filter2D(src, filters[i], -1, kernel, Point(-1, -1), 0, BORDER_DEFAULT);
-
-        //double mini,maxi;
-        //minMaxLoc(filters[i],&mini,&maxi);
-        //filters[i].convertTo(filters[i], CV_8U, 255.0/(maxi - mini), -mini * 255.0/(maxi - mini));
     }
 
+    // uniformly distributed points
     int row_gap = img.rows / ((int)sqrt(point_count));
     int col_gap = img.cols / ((int)sqrt(point_count));
 
-    for(int i = 0; i < img.rows; i += row_gap){
-        for(int j = 0; j < img.cols; j += col_gap){
+    for(int i = 0; i < img.rows; i += row_gap)
+        for(int j = 0; j < img.cols; j += col_gap)
             if (i + window_size < img.rows && j + window_size < img.cols)
-                result.push_back(get_vector(i, j));
-        }
-    }
+                result.push_back(get_vector(i, j)); // append new local feature
 
-    //cout << result.size() << endl;
-    output_result(output);
-    cout << "succeed!" << endl;
+    save(output);
+    cout << input << " Done!" << endl;
     return 0;
 }
