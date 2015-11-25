@@ -28,9 +28,13 @@
  *      ...
  *      Value_Image_i_Word_1 ... Value_Image_i_Word_j ... (32 bits float)
  *      ...
+ *Output index format:
+ *      Model_count Views_per_model
+ *      Model_index
+ *      ...
  *
  * Usage:
- *      build_database -i [input_path] -o [output_database_path] -k [number of word]
+ *      build_database -i [input_path] -d [output_database_path] -m [output_index_path] -k [number of word]
  */
 
 #include <iostream>
@@ -42,21 +46,21 @@
 
 using namespace std;
 
-int word_count, view_count; // total number of image
+int word_count, view_count, image_per_model; // total number of image
 string input, output_data, output_index;
 float* idf;
 vector<float*> dict; // tf-idf values
 vector<string> models;
 
 //read one file
-void read_file(string file_name){
+void read_file(string path, string file_name){
 
-    if (!ifstream(file_name))
+    if (!ifstream(path + file_name))
         return;
 
     set<int> word_set;
 
-    ifstream input(file_name);
+    ifstream input(path + file_name);
 
     int image_count, dim, tmp; // number of image per model
 
@@ -64,10 +68,11 @@ void read_file(string file_name){
         return;
     if (!input.read((char*)&dim, sizeof(int)))
         return;
+
     view_count += image_count;
+    image_per_model = image_count;
 
     for(int i = 0; i < image_count; i++){
-        models.push_back(file_name);
         word_set.clear();
         float* tf = new float[word_count];
         for(int j = 0; j < word_count; j++)
@@ -85,6 +90,8 @@ void read_file(string file_name){
         for(auto j: word_set)
             idf[j]++;
     }
+    string name = file_name.substr(1,file_name.find('.')-1);
+    models.push_back(name);
 }
 
 bool parse_command_line(int argc, char **argv) {
@@ -122,6 +129,7 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
 
     idf = new float[word_count];
+    view_count = 0;
 
     DIR *dir;
     struct dirent *ent;
@@ -131,7 +139,7 @@ int main(int argc, char** argv) {
 
     //treat each file
     while((ent = readdir(dir))!=NULL){
-        read_file(ent->d_name);
+        read_file(input, ent->d_name);
     }
 
     //calculate the idf value
@@ -157,7 +165,7 @@ int main(int argc, char** argv) {
     outd.close();
 
     ofstream outi(output_index);
-    outi << models.size() <<  endl;
+    outi << models.size() <<' ' << image_per_model <<  endl;
     for(int i = 0; i < models.size(); i++)
          outi << models[i] << endl;
     outi.close();
