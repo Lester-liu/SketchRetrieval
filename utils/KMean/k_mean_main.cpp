@@ -199,7 +199,8 @@ void group_testing() {
     if ((dir = opendir(input))!=NULL) {
         while ((ent = readdir(dir)) != NULL) {
             file = ent->d_name;
-
+            if (file[0] != 'm')
+                continue;
             ifstream f(input_path + '\\' + file);
             read_int(f, &data_count); // read meta-info
             read_int(f, &dim);
