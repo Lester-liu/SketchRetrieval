@@ -196,12 +196,13 @@ void group_testing() {
     K_Mean model(data, center, data_count, dim, center_count);
 
     string file;
-    if ((dir = opendir(input))!=NULL) {
+    if ((dir = opendir(input.c_str()))!=NULL) {
         while ((ent = readdir(dir)) != NULL) {
             file = ent->d_name;
             if (file[0] != 'm')
                 continue;
-            ifstream f(input + '\\' + file);
+            ifstream f(input + "\\" + file);
+
             read_int(f, &data_count); // read meta-info
             read_int(f, &dim);
 
@@ -230,7 +231,6 @@ void group_testing() {
         }
     }
 
-    in.close();
     out.close();
 
     delete[] center;

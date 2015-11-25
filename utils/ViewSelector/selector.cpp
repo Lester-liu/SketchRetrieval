@@ -1,4 +1,5 @@
-/*View selector
+/*
+ * View selector
  *
  * View selector sort the given views according to their area of shape.
  *

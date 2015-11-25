@@ -21,7 +21,7 @@ This repository contains some modules that can be used in other jobs.
 3. Gabor filter
 4. Contour extractor
 5. PLY 3D model to 2D image with different angles
-6. OFF to PLY convertor
+6. OFF to PLY converter
 
 ## How to use
 
