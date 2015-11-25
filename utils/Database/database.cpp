@@ -7,7 +7,8 @@
  *
  * Parameters:
  *      i: input folder containing translated images (one file per model)
- *      o: database with TF-IDF value for all pair of word and image
+ *      d: database with TF-IDF value for all pair of word and image
+ *      m: txt file indicate the correspond model of each image
  *      k: number of word
  *
  * N.B. The translated image file per model has the following format
@@ -42,24 +43,33 @@
 using namespace std;
 
 int word_count, view_count; // total number of image
-string input, output;
-vector<float> idf;
-vector<vector<float> > dict; // tf-idf values
+string input, output_data, output_index;
+float* idf;
+vector<float*> dict; // tf-idf values
+vector<string> models;
 
 //read one file
 void read_file(string file_name){
+
+    if (!ifstream(file_name))
+        return;
+
     set<int> word_set;
-    vector<float> tf(word_count);
 
     ifstream input(file_name);
 
     int image_count, dim, tmp; // number of image per model
-    input.read((char*)&image_count, sizeof(int));
-    input.read((char*)&dim, sizeof(int));
+
+    if (!input.read((char*)&image_count, sizeof(int)))
+        return;
+    if (!input.read((char*)&dim, sizeof(int)))
+        return;
     view_count += image_count;
 
     for(int i = 0; i < image_count; i++){
+        models.push_back(file_name);
         word_set.clear();
+        float* tf = new float[word_count];
         for(int j = 0; j < word_count; j++)
             tf[j] = 0;
 
@@ -77,7 +87,41 @@ void read_file(string file_name){
     }
 }
 
+bool parse_command_line(int argc, char **argv) {
+    int i = 1;
+    while(i < argc) {
+        if (argv[i][0] != '-')
+            break;
+        switch(argv[i][1]) {
+            case 'h': // help
+                return false;
+            case 'k': // threshold flag
+                word_count = atoi(argv[++i]);
+                break;
+            case 'i': // input file
+                input = argv[++i];
+                break;
+            case 'd': // output file
+                output_data = argv[++i];
+                break;
+            case 'm':
+                output_index = argv[++i];
+                break;
+        }
+        i++;
+    }
+    if (input == "" || output_data == "" || output_index == "") { // invalid file name
+        return false;
+    }
+    return true;
+}
+
 int main(int argc, char** argv) {
+
+    if (!parse_command_line(argc, argv))
+        return EXIT_FAILURE;
+
+    idf = new float[word_count];
 
     DIR *dir;
     struct dirent *ent;
@@ -100,5 +144,23 @@ int main(int argc, char** argv) {
             dict[i][j] *= idf[j];
         }
     }
+
+    ofstream outd(output_data);
+
+    outd.write((char*)&view_count, sizeof(int));
+    outd.write((char*)&word_count, sizeof(int));
+
+    for(int i = 0; i < view_count; i++){
+        outd.write((char*)dict[i], sizeof(float) * word_count);
+        delete[] dict[i];
+    }
+    outd.close();
+
+    ofstream outi(output_index);
+    outi << models.size() <<  endl;
+    for(int i = 0; i < models.size(); i++)
+         outi << models[i] << endl;
+    outi.close();
+
     return EXIT_SUCCESS;
 }

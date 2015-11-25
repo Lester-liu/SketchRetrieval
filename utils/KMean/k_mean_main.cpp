@@ -38,6 +38,9 @@
  *      f: file containing all Gabor features files name (cases + line per case + names, text file)
  *      d: dictionary to be used
  *      s: size of the value: 8 for uint8_t, 32 for float
+ *      c: case number
+ *      a: data size
+ *      o: output file
  *
  * Output: translated images:
  *
@@ -47,10 +50,11 @@
  *      Image_Line_Count (Dimension * 32 bits)
  *
  * Usage 3 (Group_Testing):
- *      k_mean -f [Path_to_file] -d [Path_to_dictionary] -s [8|32]
+ *      k_mean -f [Path_to_folder] -d [Path_to_dictionary] -s [8|32] -c [case number] -a [data size] -o [output_file]
  */
 
 #include "k_mean.h"
+#include <dirent.h>
 
 using namespace k_mean;
 
@@ -60,11 +64,12 @@ enum Format {Integer, Float}; // format of initial data
 Mode mode = Group_Testing;
 Format format = Integer;
 
-string input, output, dictionary;
+string input, output, dictionary, input_path, output_file;
 float *data;
 int center_count = 0;
 int data_count = 0;
 int dim = 0;
+int cases = 0;
 
 int iteration = 0;
 float delta = 0;
@@ -109,6 +114,15 @@ bool parse_command_line(int argc, char **argv) {
                 break;
             case 'i': // number of iteration
                 iteration = atoi(argv[++i]);
+                break;
+            case 'c':
+                cases = atoi(argv[++i]);
+                break;
+            case 'a':
+                data_count = atoi(argv[++i]);
+                break;
+            case 'o':
+                output_file = argv[++i];
                 break;
         }
         i++;
@@ -158,61 +172,62 @@ void training() {
 
 void group_testing() {
 
-    int cases;
-    ifstream in(input);
-    in >> cases;
-    in >> data_count;
+    DIR *dir;
+    struct dirent *ent;
 
     // read the dictionary
-    ifstream dir(dictionary);
-    read_int(dir, &center_count); // read meta-info
-    read_int(dir, &dim); // should be the same
+    ifstream dict(dictionary);
+    read_int(dict, &center_count); // read meta-info
+    read_int(dict, &dim); // should be the same
 
     float *center = new float[dim * center_count];
-    read_floats(dir, center, dim * center_count);
+    read_floats(dict, center, dim * center_count);
 
-    dir.close();
+    dict.close();
 
     data = new float[dim * data_count];
     int *allocation = new int[data_count];
 
     // prepare the output file
-    ofstream out(input + ".trans");
+    ofstream out(output_file);
     out.write((char*)&cases, sizeof(int));
     out.write((char*)&dim, sizeof(int));
 
     K_Mean model(data, center, data_count, dim, center_count);
 
     string file;
-    for (int z = 0; z < cases; z++) {
-        in >> file;
+    if ((dir = opendir(input))!=NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            file = ent->d_name;
+            if (file[0] != 'm')
+                continue;
+            ifstream f(input_path + '\\' + file);
+            read_int(f, &data_count); // read meta-info
+            read_int(f, &dim);
 
-        ifstream f(file);
-        read_int(f, &data_count); // read meta-info
-        read_int(f, &dim);
+            // read data
+            if (format == Integer) {
+                uint8_t *_data = new uint8_t[dim * data_count];
+                read_bytes(f, _data, dim * data_count);
 
-        // read data
-        if (format == Integer) {
-            uint8_t *_data = new uint8_t[dim * data_count];
-            read_bytes(f, _data, dim * data_count);
+                for (int i = 0; i < dim * data_count; i++)
+                    data[i] = float(_data[i]);
 
-            for (int i = 0; i < dim * data_count; i++)
-                data[i] = float(_data[i]);
+                delete[] _data;
+            }
+            else {
+                read_floats(f, data, dim * data_count);
+            }
 
-            delete[] _data;
+            f.close();
+
+            // replace the data with new image
+            model.update_data();
+            // translate the local features into words
+            model.translate(allocation);
+
+            out.write((char *) allocation, sizeof(int) * data_count);
         }
-        else {
-            read_floats(f, data, dim * data_count);
-        }
-
-        f.close();
-
-        // replace the data with new image
-        model.update_data();
-        // translate the local features into words
-        model.translate(allocation);
-
-        out.write((char*)allocation, sizeof(int) * data_count);
     }
 
     in.close();
