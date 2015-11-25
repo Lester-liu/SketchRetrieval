@@ -64,7 +64,7 @@ enum Format {Integer, Float}; // format of initial data
 Mode mode = Group_Testing;
 Format format = Integer;
 
-string input, output, dictionary, input_path, output_file;
+string input, output, dictionary, output_file;
 float *data;
 int center_count = 0;
 int data_count = 0;
@@ -201,7 +201,7 @@ void group_testing() {
             file = ent->d_name;
             if (file[0] != 'm')
                 continue;
-            ifstream f(input_path + '\\' + file);
+            ifstream f(input + '\\' + file);
             read_int(f, &data_count); // read meta-info
             read_int(f, &dim);
 
