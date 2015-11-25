@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#exemple: encoder.sh ../Sketch/pipeline/bin/ /Sketch/pipeline/dict.txt
+#exemple: encoder.sh ../Sketch/pipeline/bin/ /Sketch/pipeline/dict.txt ../Sketch/dic/ 36
 
 Path="$1" #path of input(ex: binary folder)
 Dict="$2" #path of dictionary
