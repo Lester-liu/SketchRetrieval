@@ -49,17 +49,13 @@ string model_base = "/home/lyx/workspace/data/TinySketch/models_ply/";
 
 void show_help();
 
-// return the index of model
-int retrieve(Mat& image, Clusters& dictionary);
+int retrieve(Mat& image, Clusters& dictionary); // return the index of model
 
-// show 3D model with VTK
-void show_model(string file);
+void show_model(string file); // show 3D model with VTK
 
-// build 3D model name given the index
-string to_name(int index);
+string to_name(int index); // build 3D model name given the index
 
-// Process all arguments
-bool parse_command_line(int argc, char **argv);
+bool parse_command_line(int argc, char **argv); // Process all arguments
 
 int main(int argc, char** argv) {
 
@@ -96,6 +92,8 @@ int retrieve(Mat& image, Clusters& dictionary) {
     // compute TF-IDF
 
     // get nearest neighbor
+
+    return -1;
 }
 
 // show 3D model with VTK
