@@ -22,6 +22,6 @@ do
             File="${File%.*}"
             #echo $Dest_Folder$Dest_Folder_Name/$File
             # Run the contour_extraction
-            ./Gabor/Debug/gabor -i $Src -o $Dest_Folder$Dest_Folder_Name/$File;
+            ./Gabor/Debug/gabor -i $Src -o $Dest_Folder$Dest_Folder_Name/$File.bin;
     done
 done
