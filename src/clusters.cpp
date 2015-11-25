@@ -4,7 +4,7 @@
 
 #include "clusters.h"
 
-Clusters::Clusters(Blob centers) : centers(centers) { }
+Clusters::Clusters(Blob& centers) : centers(centers) { }
 
 Clusters::~Clusters() { }
 
@@ -16,7 +16,7 @@ int Clusters::dimension() const {
     return centers.dim.y;
 }
 
-void Clusters::find_center(Blob vector, int *allocation, int n) const {
+void Clusters::find_center(Blob& vector, int *allocation, int n) const {
     assert(vector.dim.x == n); // x is the number of lines, y is the dimension of vector
     // find neighbor for all instances
     for (int i = 0; i < n; i++)
