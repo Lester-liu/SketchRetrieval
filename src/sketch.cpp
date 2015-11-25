@@ -41,11 +41,13 @@ using namespace cv;
 using namespace std;
 
 enum Mode {Camera, File, Testing};
-Mode mode = File;
+Mode mode = Testing;
 
 string database_file, label_file, input_file, dictionary_file;
 
 string model_base = "/home/lyx/workspace/data/TinySketch/models_ply/";
+
+void show_help();
 
 // return the index of model
 int retrieve(Mat& image, Clusters& dictionary);
@@ -56,29 +58,13 @@ void show_model(string file);
 // build 3D model name given the index
 string to_name(int index);
 
+// Process all arguments
+bool parse_command_line(int argc, char **argv);
+
 int main(int argc, char** argv) {
 
-    // choose a mode
-    switch (argc) {
-        case 1:
-            cout << "Testing mode ..." << endl;
-            mode = Testing;
-            break;
-        case 2:
-            if (argv[1] == "-c")
-                mode = Camera;
-            else
-                return EXIT_FAILURE;
-            break;
-        case 3:
-            if (argv[1] == "-f")
-                input_file = argv[2];
-            else
-                return EXIT_FAILURE;
-            break;
-        default:
-            return EXIT_FAILURE;
-    }
+    if (!parse_command_line(argc, argv))
+        return EXIT_FAILURE;
 
     int model_index = -1;
 
@@ -144,3 +130,42 @@ string to_name(int index) {
     return model_base + "m" + to_string(index) + ".ply";
 }
 
+// Process all arguments
+bool parse_command_line(int argc, char **argv) {
+
+    int i = 1;
+    while(i < argc) {
+        if (argv[i][0] != '-')
+            break;
+        switch(argv[i][1]) {
+            case 'h': // help
+                show_help();
+                return false;
+            case 'd': // TF-IDF file
+                database_file = argv[++i];
+                break;
+            case 'w': // dictionary file
+                dictionary_file = argv[++i];
+                break;
+            case 'l': // label file
+                label_file = argv[++i];
+                break;
+            case 'm': // folder containing all PLY models
+                model_base = argv[++i];
+                break;
+            case 'f': // input sktech image
+                mode = File;
+                input_file = argv[++i];
+                break;
+            case 'c': // camera mode
+                mode = Camera;
+                break;
+        }
+        i++;
+    }
+    return true;
+}
+
+void show_help() {
+
+}
