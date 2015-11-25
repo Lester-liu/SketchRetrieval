@@ -17,9 +17,6 @@ INCLUDE(${VTK_USE_FILE})
 PROJECT(Sketch)
 
 SET(MAIN src/sketch.cpp)
-SET(LEARNING src/learning/svm.cpp src/learning/svm.h src/learning/ml.cpp src/learning/ml.h)
-SET(DATA src/structure/blob.cpp src/structure/blob.h)
-SET(GEOMETRY src/geometry/triangle.cpp src/geometry/triangle.h src/geometry/line.cpp src/geometry/line.h src/geometry/model.cpp src/geometry/model.h src/geometry/transform.cpp)
-ADD_EXECUTABLE(sketch ${MAIN} ${LEARNING} ${DATA} ${GEOMETRY})
+ADD_EXECUTABLE(sketch ${MAIN} src/blob.cpp src/blob.h src/clusters.cpp src/clusters.h)
 
 TARGET_LINK_LIBRARIES(sketch ${OpenCV_LIBS} ${VTK_LIBRARIES})

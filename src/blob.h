@@ -23,7 +23,7 @@ struct Dim {
 
     Dim(int x, int y, int z): x(x), y(y), z(z) {}
 
-    Dim(Dim& d) {
+    Dim(const Dim &d) {
         x = d.x;
         y = d.y;
         z = d.z;
@@ -43,12 +43,18 @@ struct Dim {
     /*
      * Return the size of equivalent 1D array
      */
-    int get_size() const {
+    int size() const {
         return x * y * z;
     }
 
     bool operator== (const Dim& dim) const {
         return x == dim.x && y == dim.y && z == dim.z;
+    }
+
+    void operator() (const Dim& dim) {
+        x = dim.x;
+        y = dim.y;
+        z = dim.z;
     }
 };
 
@@ -60,12 +66,16 @@ class Blob {
 public:
 
     float *data; // 1D array content
-    Dim size; // Real dimension of the content
+    Dim dim; // Real dimension of the content
 
     Blob();
-    Blob(Dim size); // 0 array
-    Blob(float *data, Dim size); // Copy the value into new array
+    Blob(Dim dim); // 0 array
+    Blob(float *data, Dim dim); // Copy the value into new array
+    Blob(const Blob &blob); // clone constructor
     virtual ~Blob();
+
+    int size() const;
+    float at(int x, int y = 0, int z = 0) const;
 
 };
 
