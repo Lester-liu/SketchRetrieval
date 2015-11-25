@@ -13,9 +13,12 @@ void merge(string filename){
         return;
     ifstream input(filename);
     int n,size;
-    input.read((char*)&n,sizeof(int));
-    input.read((char*)&size,sizeof(int));
+    if (!input.read((char*)&n,sizeof(int)))
+        return;
+    if (!input.read((char*)&size,sizeof(int)))
+        return;
     float tmp;
+    //cout << n <<' ' << size;
     for(int i = 0; i < n*size; i++){
         input.read((char*)&tmp,sizeof(float));
         result[k++] = tmp;
@@ -28,14 +31,10 @@ int main(int argc, char** argv) {
     ss.clear();
 
     ss << argv[2];
-    ss >> name;
-    ss.clear();
-
-    ss << argv[3];
     ss >> output;
 
-    N = atoi(argv[4]);
-    dim = atoi(argv[5]);
+    N = atoi(argv[3]);
+    dim = atoi(argv[4]);
 
     cout << N << ' ' << dim << endl;
 
@@ -46,17 +45,17 @@ int main(int argc, char** argv) {
     if ((dir = opendir(path.c_str())) != NULL){
         while((ent = readdir(dir)) != NULL){
             string filename = ent->d_name;
-            cout << path + filename + "/" + name << endl;
-            merge(path + filename + "/" + name);
+            //cout << path + "/" + filename << endl;
+            merge(path + "/" + filename);
         }
     }
 
-    k;
+    cout << ' ' << k << endl;
     ofstream out(output);
     int lines = k/dim;
     out.write((char*)&lines,sizeof(int));
     out.write((char*)&dim,sizeof(int));
-    out.write((char*)result,sizeof(float) * k * dim);
+    out.write((char*)result,sizeof(float) * k);
     out.close();
 
     return 0;

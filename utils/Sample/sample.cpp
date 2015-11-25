@@ -32,9 +32,10 @@ float *result;
 
 bool same_color(float *val){
     int i = 1;
-    int k = val[0];
+    float k = val[0];
     while(i < size) {
-        if (abs(val[i] - k) > 5)
+        //cout << val[i] << ' ';
+        if (abs(val[i] - k) > 5.0)
             return false;
         i++;
     }
@@ -46,12 +47,16 @@ void get_vectors(string file){
     ifstream in(file);
 
     int a,b;
-    in.read((char*)&a,sizeof(int));
-    in.read((char*)&b, sizeof(int));
+    if(!in.read((char*)&a,sizeof(int)))
+        return;
+    if(!in.read((char*)&b, sizeof(int)))
+        return;
 
+    int k = 0;
     float* val = new float[size];
-    while(line_number < lines && (!in.eof())){
-        in.read((char*)val,size);
+    while(line_number < lines && (!in.eof()) && (k < lines)){
+        in.read((char*)val,size * sizeof(float));
+        k++;
         if (!same_color(val)){
             for(int i = 0; i < size; i++)
                 result[line_number * size + i] = val[i];
@@ -76,10 +81,10 @@ int main(int argc, char** argv) {
 
     result = new float[lines * size];
 
-    while(line_number < lines){
-        in >> file_name >> tmp;
+    while(line_number < lines && (!in.eof())){
+        in >> file_name;
         file_name = file_name.substr(0, file_name.length() - 4);
-        get_vectors(bin_path + file_name);
+        get_vectors(bin_path + file_name +".bin");
     }
 
     ofstream out(output);
@@ -89,6 +94,7 @@ int main(int argc, char** argv) {
     out.write((char*)result, sizeof(float) * size * line_number);
 
     out.close();
+    cout << output << endl;
 
     delete[] result;
     return EXIT_SUCCESS;
