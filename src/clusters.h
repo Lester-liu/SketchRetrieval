@@ -9,6 +9,9 @@
 #include <climits>
 #include "blob.h"
 
+/*
+ * This class is similar to K-means, but it is a CPU version to find a nearest neighbor
+ */
 class Clusters {
 
 private:
@@ -17,11 +20,11 @@ private:
 public:
     Blob centers;
 
-    Clusters(Blob centers);
+    Clusters(Blob& centers);
     virtual ~Clusters();
     int size() const; // the number of clusters
     int dimension() const; // the center dimension
-    void find_center(Blob vectors, int *allocation, int n) const; // get nearest neighbor for n vectors
+    void find_center(Blob& vectors, int *allocation, int n) const; // get nearest neighbor for n vectors
 
 };
 

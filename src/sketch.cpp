@@ -7,13 +7,15 @@
  *
  * Whenever you want to use this program, run the offline part first, which builds a database for online query.
  *
- * Usage 1 (file based query): sketch -d [database_file] -w [label_file] -f [input_file]
- * Usage 2 (real-time query with camera): sketch -d [database_file] -w [label_file] -c
+ * Usage 1 (file based query): sketch -d [database_file] -w [dictionary_file] -l [label_file] -f [input_file]
+ * Usage 2 (real-time query with camera): sketch -d [database_file] -w [dictionary_file] -l [label_file] -c
  */
 
 #include <iostream>
 #include <fstream>
 #include "opencv2/opencv.hpp"
+
+#include "clusters.h"
 
 using namespace cv;
 using namespace std;
@@ -21,10 +23,10 @@ using namespace std;
 enum Mode {Camera, File};
 Mode mode = File;
 
-string database_file, label_file, input_file;
+string database_file, label_file, input_file, dictionary_file;
 
 // return the index of model
-int retrieve(Mat& image) {
+int retrieve(Mat& image, Clusters& dictionary) {
     // use Gabor filter
 
     // translate into words
@@ -36,8 +38,6 @@ int retrieve(Mat& image) {
 
 int main(int argc, char** argv) {
 
-    string input;
-
     // choose a mode
     switch (argc) {
         case 2:
@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
             break;
         case 3:
             if (argv[1] == "-f")
-                input = argv[2];
+                input_file = argv[2];
             else
                 return EXIT_FAILURE;
             break;
@@ -56,8 +56,14 @@ int main(int argc, char** argv) {
             return EXIT_FAILURE;
     }
 
-    if (mode == File) {
+    int model_index = -1;
 
+    if (mode == File) {
+        Mat image_gray = imread(input_file, CV_LOAD_IMAGE_GRAYSCALE);
+        Mat image;
+        image_gray.convertTo(image, CV_32FC1);
+        //model_index = retrieve(image);
+        cout << model_index << endl;
     }
     else if (mode == Camera) {
 
