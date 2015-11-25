@@ -1,5 +1,19 @@
-/*
+/* Sample
  *
+ * Sample selects qualified vectors among vectors of each view.
+ * (qualified vector is the one who has different colors)
+ *
+ * Parameters:
+ *      txt file with sorted view files' names
+ *      folder of views' binary files
+ *      output file with selected vectors
+ *
+ * Output format:
+ *      N (32 bits integer):number of vectors   m (32 bits integer):size of vectors
+ *      vectors(32 bits float)
+ *
+ * Usage:
+ *      sample [txt file path] [folder path] [output path]
  */
 
 #include <iostream>
