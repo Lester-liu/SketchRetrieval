@@ -6,8 +6,9 @@
  * we can get the keyword of each file.
  *
  * Parameters:
- *      i: input folder containing translated images
+ *      i: input folder containing translated images (one file per model)
  *      o: database with TF-IDF value for all pair of word and image
+ *      k: number of word
  *
  * N.B. The translated image file per model has the following format
  *
@@ -28,34 +29,76 @@
  *      ...
  *
  * Usage:
- *      build_database -i [input_path] -o [output_database_path]
+ *      build_database -i [input_path] -o [output_database_path] -k [number of word]
  */
 
 #include <iostream>
+#include <fstream>
 #include <dirent.h>
-#include <map>
+#include <set>
 #include <vector>
+#include <cmath>
 
 using namespace std;
 
+int word_count, view_count; // total number of image
 string input, output;
-map<int, int> words;
-vector<map<int> > dict;
+vector<float> idf;
+vector<vector<float> > dict; // tf-idf values
 
+//read one file
 void read_file(string file_name){
+    set<int> word_set;
+    vector<float> tf(word_count);
 
+    ifstream input(file_name);
+
+    int image_count, dim, tmp; // number of image per model
+    input.read((char*)&image_count, sizeof(int));
+    input.read((char*)&dim, sizeof(int));
+    view_count += image_count;
+
+    for(int i = 0; i < image_count; i++){
+        word_set.clear();
+        for(int j = 0; j < word_count; j++)
+            tf[j] = 0;
+
+        //calculate the local tf value
+        for(int j = 0; j < dim; j++){
+            input.read((char*)&tmp, sizeof(int));
+            word_set.insert(tmp);
+            tf[tmp]++;
+        }
+        dict.push_back(tf);
+
+        //update the occurence of each word
+        for(auto j: word_set)
+            idf[j]++;
+    }
 }
 
-int main() {
+int main(int argc, char** argv) {
+
     DIR *dir;
     struct dirent *ent;
 
     if((dir = opendir(input.c_str()))==NULL)
-        return 0;
+        return EXIT_FAILURE;
 
+    //treat each file
     while((ent = readdir(dir))!=NULL){
-
+        read_file(ent->d_name);
     }
 
-    return 0;
+    //calculate the idf value
+    for(int i = 0; i < word_count; i++)
+        idf[i] = idf[i] == 0 ? 0 : log((float)view_count / idf[i]);
+
+    //calculate the tf-idf value
+    for(int i = 0; i < view_count; i++){
+        for(int j = 0; j < word_count; j++){
+            dict[i][j] *= idf[j];
+        }
+    }
+    return EXIT_SUCCESS;
 }
