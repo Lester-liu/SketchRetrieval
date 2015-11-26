@@ -39,8 +39,8 @@
  *      d: dictionary to be used
  *      s: size of the value: 8 for uint8_t, 32 for float
  *      c: case number
- *      a: data size
- *      o: output file
+ *      a: data size (number of features in an image)
+ *      o: output file (a binary file for all files in the group)
  *
  * Output: translated images:
  *
@@ -50,7 +50,7 @@
  *      Image_Line_Count (Dimension * 32 bits)
  *
  * Usage 3 (Group_Testing):
- *      k_mean -f [Path_to_folder] -d [Path_to_dictionary] -s [8|32] -c [case number] -a [data size] -o [output_file]
+ *      k_mean -f [Path_to_folder] -d [Path_to_dictionary] -s [8|32] -c [case_number] -a [data_size] -o [output_file]
  */
 
 #include "k_mean.h"
@@ -136,6 +136,8 @@ bool parse_command_line(int argc, char **argv) {
 
 void training() {
 
+    cout << "Training" << endl;
+
     ifstream in(input);
     read_int(in, &data_count); // read meta-info
     read_int(in, &dim);
@@ -157,10 +159,10 @@ void training() {
     }
 
     in.close();
+    cout << data_count << ' ' << dim << ' ' << center_count << endl;
 
     // train the model
     K_Mean model(data, data_count, dim, center_count);
-    //cout << data_count << ' ' << dim << ' ' << center_count << endl;
     model.execute(iteration, delta);
 
     // save the dictionary
@@ -171,6 +173,8 @@ void training() {
 }
 
 void group_testing() {
+
+    cout << "Group Testing" << endl;
 
     DIR *dir;
     struct dirent *ent;
@@ -201,7 +205,8 @@ void group_testing() {
             file = ent->d_name;
             if (file[0] != 'm')
                 continue;
-            ifstream f(input + "\\" + file);
+            ifstream f(input + file);
+            cout << input + file << endl;
 
             read_int(f, &data_count); // read meta-info
             read_int(f, &dim);
@@ -240,6 +245,8 @@ void group_testing() {
 }
 
 void testing() {
+
+    cout << "Testing" << endl;
 
     ifstream in(input);
     read_int(in, &data_count); // read meta-info

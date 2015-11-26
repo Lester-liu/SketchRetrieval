@@ -79,7 +79,7 @@ namespace k_mean {
             cluster_size[allocation[i]]++;
         }
 
-        //printCpuMatrix(cluster_size, center_count, 1, center_count, 0);
+        //printCpuMatrix(cluster_size, min(100, center_count), 1, min(100, center_count), 0);
         //printCpuMatrix(allocation, data_count, 1, data_count, 0);
 
     }
@@ -204,6 +204,9 @@ namespace k_mean {
         callCuda(cudaMalloc(&d_allocation_row_csc, sizeof(int) * (center_count + 1)));
         callCuda(cudaMalloc(&d_cluster_size, sizeof(float) * center_count));
         callCuda(cudaMalloc(&d_one, sizeof(float) * max(data_count, max(dim, center_count)))); // long enough
+
+        callCuda(cudaMemcpy(d_center, center, sizeof(float) * dim * center_count, cudaMemcpyHostToDevice));
+        callCuda(cudaMemcpy(d_data, data, sizeof(float) * dim * data_count, cudaMemcpyHostToDevice));
 
         set_value(d_one, max(data_count, max(dim, center_count)), 1.0f);
 

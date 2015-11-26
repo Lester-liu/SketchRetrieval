@@ -7,7 +7,7 @@ This project is based on Mathias Eitz's paper "[Sketch-Based Shape Retrieval](ht
 ## Idea
 
 The idea is quite simple, 3D models are complex and can not be given directly to any machine learning mecanisms. So, instead of using the whole
-model, we use different views of the model. Then we summarize the view with words using K-Mean and run a nearest neigbor classifier on these bag-of-features.
+model, we use different views of the model. Then we summarize the view with words using K-Means and run a nearest neighbor classifier on these bag-of-features.
 
 There are two parts in the project, the online query is coded in the src directory, whereas the offline preparation is in the utils folder. Some of the codes
 are similar. The offline part consists of multiple modules governed by shell script.
