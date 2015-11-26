@@ -195,7 +195,7 @@ void group_testing() {
     // prepare the output file
     ofstream out(output_file);
     out.write((char*)&cases, sizeof(int));
-    out.write((char*)&dim, sizeof(int));
+    out.write((char*)&data_count, sizeof(int));
 
     K_Mean model(data, center, data_count, dim, center_count);
 
