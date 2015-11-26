@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # One folders with PNG format files and one folder to the contour
-#gabor_filter.sh ../../../data/Sketch/pipeline/contour/ ../../../data/Sketch/pipeline/bin/
+# Ex: bash gabor_filter.sh ../../../data/Sketch/pipeline/contour/ ../../../data/Sketch/pipeline/bin/
 
 Files="$1"
 Dest_Folder="$2"

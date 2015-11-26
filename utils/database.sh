@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Ex:
+# Ex: bash database.sh ../../../data/TinySketch/encode/ ../../../data/TinySketch/tf-idf ../../../data/TinySketch/label 100
 
 Input="$1" # input folder with encoded files
 Output_data="$2" # output tf-idf file
