@@ -29,10 +29,10 @@ using namespace std;
 using namespace cv;
 
 string input,output;
-vector<string> filenames;
+vector<string> file_names;
 
 int areaCalculate(string filename){
-    Mat img = imread(filename,CV_LOAD_IMAGE_GRAYSCALE);
+    Mat img = imread(filename, CV_LOAD_IMAGE_GRAYSCALE);
     //double mini, maxi;
     //minMaxLoc(img, &mini, &maxi);
     //img.convertTo(img,CV_8U, 255.0/(maxi - mini), -mini * 255.0/(maxi - mini));
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
     //get all the file names in the input folder
     if ((dir = opendir(input.c_str())) != NULL){
         while((ent  = readdir(dir)) != NULL){
-            filenames.push_back(ent->d_name);
+            file_names.push_back(ent->d_name);
             size++;
         }
     }
@@ -67,12 +67,12 @@ int main(int argc, char** argv) {
     vector<pair<int,string> > dic;
 
     for(int i = 0; i < size; i++){
-        if (filenames[i][0] != 'm')
+        if (file_names[i][0] != 'm')
             continue;
-        int k = areaCalculate((input + filenames[i]).c_str());
+        int k = areaCalculate((input + file_names[i]).c_str());
         if (k == 0)
-            cout << (input + filenames[i]).c_str() << endl;
-        dic.push_back(make_pair(k,filenames[i]));
+            cout << (input + file_names[i]).c_str() << endl;
+        dic.push_back(make_pair(k, file_names[i]));
     }
     //sort according to its area
     sort(dic.begin(),dic.end());
@@ -81,5 +81,7 @@ int main(int argc, char** argv) {
         out << dic[i].second <<' ' << dic[i].first << endl;
 
     out.close();
-    return 0;
+
+    cout << input << " done!" << endl;
+    return EXIT_SUCCESS;
 }

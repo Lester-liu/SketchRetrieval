@@ -32,8 +32,8 @@ string input, output;
 
 int kernel_size = 15;
 int k = 8; // number of directions for Gabor filter
-int window_size = 4; // local feature area (not size)
-int point_count = 1000;
+int window_size = 16; // local feature area (not size)
+int point_per_row = 24;
 double sigma = 4;
 double theta = 0;
 double lambda = 10.0;
@@ -113,7 +113,7 @@ bool parse_command_line(int argc, char **argv) {
                 k = atoi(argv[++i]);
                 break;
             case 'p':
-                point_count = atoi(argv[++i]);
+                point_per_row = atoi(argv[++i]);
                 break;
             case 'n':
                 kernel_size = atoi(argv[++i]);
@@ -179,8 +179,8 @@ int main(int argc, char** argv) {
     }
 
     // uniformly distributed points
-    int row_gap = img.rows / ((int)sqrt(point_count));
-    int col_gap = img.cols / ((int)sqrt(point_count));
+    int row_gap = (img.rows - window_size) / point_per_row;
+    int col_gap = (img.cols - window_size) / point_per_row;
 
     for(int i = 0; i < img.rows; i += row_gap)
         for(int j = 0; j < img.cols; j += col_gap)
