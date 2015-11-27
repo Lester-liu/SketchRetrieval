@@ -4,15 +4,16 @@
 
 #include "clusters.h"
 
+Clusters::Clusters() { }
 Clusters::Clusters(Blob& centers) : centers(centers) { }
 
 Clusters::~Clusters() { }
 
-int Clusters::size() const {
+int Clusters::row() const {
     return centers.dim.x;
 }
 
-int Clusters::dimension() const {
+int Clusters::col() const {
     return centers.dim.y;
 }
 
@@ -28,9 +29,9 @@ int Clusters::find_center(float *vector) const {
     float dist = std::numeric_limits<float>::max();
 
     // find the nearest neighbor
-    for (int i = 0; i < size(); i++) {
+    for (int i = 0; i < row(); i++) {
         float tmp = 0;
-        for (int j = 0; j < dimension(); j++)
+        for (int j = 0; j < col(); j++)
             tmp += (vector[j] - centers.at(i, j)) * (vector[j] - centers.at(i, j));
         if (tmp < dist) {
             dist = tmp;

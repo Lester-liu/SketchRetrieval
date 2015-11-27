@@ -36,6 +36,7 @@
 #include <vtkRenderWindowInteractor.h>
 
 #include "clusters.h"
+#include "tf_idf.h"
 
 using namespace cv;
 using namespace std;
@@ -58,6 +59,8 @@ double beta = 0.5;
 int window_size = 8; // local feature area (not size)
 int point_per_row = 28;
 int data_count = 0;
+
+TF_IDF tf_idf;
 
 void show_help();
 
@@ -146,10 +149,16 @@ int retrieve(Mat& image, Clusters& dictionary) {
     int* word = new int[data_count];
     dictionary.find_center(blob, word, data_count);
     // compute TF-IDF
-
+    if (tf_idf.get_word_count() == 0)
+        tf_idf = TF_IDF(dictionary_file);
     // get nearest neighbor
+    float* wordf = new float[data_count];
+    for(int i = 0; i < data_count; i++)
+        wordf[i] = word[i];
 
-    return -1;
+    Dim d(1,data_count,1);
+    Blob b(wordf,d);
+    return tf_idf.find_nearest(b);
 }
 
 // show 3D model with VTK

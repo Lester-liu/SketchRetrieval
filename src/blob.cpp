@@ -40,8 +40,12 @@ Blob::~Blob() {
 
 }
 
-int Blob::size() const {
-    return dim.size();
+int Blob::row() const {
+    return dim.x;
+}
+
+int Blob::col() const{
+    return dim.y;
 }
 
 float Blob::at(int x, int y, int z) const {
