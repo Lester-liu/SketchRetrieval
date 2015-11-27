@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#Ex: bash merge_sample.sh ../../../data/TinySketch/gabors/ ../../../data/TinySketch/vectors.bin 282240 512
+
 Path="$1"
 Output="$2"
 Line="$3"
