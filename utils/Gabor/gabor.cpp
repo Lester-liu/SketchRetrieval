@@ -143,7 +143,7 @@ bool parse_command_line(int argc, char **argv) {
         }
         i++;
     }
-    if (input == "" || output == "") { // invalid file name
+    if (input == "" || output == "" || picture_path == "") { // invalid file name
         show_help();
         return false;
     }
@@ -170,10 +170,12 @@ int main(int argc, char** argv) {
         return 0;
 
     ifstream in(input);
-    string input_file;
-    in >> input_file;
+    string picture_name;
+    in >> picture_name;
 
-    Mat img = imread(input, CV_LOAD_IMAGE_GRAYSCALE);
+    //cout << input <<' ' << output <<' ' << picture_path << ' ' << picture_name << endl;
+
+    Mat img = imread(picture_path + picture_name, CV_LOAD_IMAGE_GRAYSCALE);
     Mat src;
     img.convertTo(src, CV_32F);
 
