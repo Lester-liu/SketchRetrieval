@@ -15,9 +15,10 @@
  *      g[gamma]: spatial aspect ratio
  *      i: input image
  *      o: output file
+ *      a: picture_path
  *
  * Usage:
- *      gabor -k [k] -n [n] -s [sigma] -t [theta] -l [lambda] -b [beta] -i [Path_to_input] -o [Path_to_output]
+ *      gabor -k [k] -p [number of points] -n [n] -s [sigma] -t [theta] -l [lambda] -b [beta] -i [Path_to_input] -o [Path_to_output] -a [picture_path]
  */
 
 #include <iostream>
@@ -28,7 +29,7 @@
 using namespace std;
 using namespace cv;
 
-string input, output;
+string input, output, picture_path;
 
 int kernel_size = 15;
 int k = 8; // number of directions for Gabor filter
@@ -136,6 +137,9 @@ bool parse_command_line(int argc, char **argv) {
             case 'o': // output file
                 output = argv[++i];
                 break;
+            case 'a':
+                picture_path = argv[++i];
+                break;
         }
         i++;
     }
@@ -164,6 +168,10 @@ int main(int argc, char** argv) {
 
     if (!parse_command_line(argc, argv))
         return 0;
+
+    ifstream in(input);
+    string input_file;
+    in >> input_file;
 
     Mat img = imread(input, CV_LOAD_IMAGE_GRAYSCALE);
     Mat src;

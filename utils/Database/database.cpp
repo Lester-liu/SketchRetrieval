@@ -62,11 +62,11 @@ void read_file(string path, string file_name){
 
     ifstream input(path + file_name);
 
-    int image_count, dim, tmp; // number of image per model
+    int image_count, data_count, tmp; // number of image per model
 
     if (!input.read((char*)&image_count, sizeof(int)))
         return;
-    if (!input.read((char*)&dim, sizeof(int)))
+    if (!input.read((char*)&data_count, sizeof(int)))
         return;
 
     view_count += image_count;
@@ -79,7 +79,7 @@ void read_file(string path, string file_name){
             tf[j] = 0;
 
         //calculate the local tf value
-        for(int j = 0; j < dim; j++){
+        for(int j = 0; j < data_count; j++){
             input.read((char*)&tmp, sizeof(int));
             word_set.insert(tmp);
             tf[tmp]++;
@@ -123,6 +123,12 @@ bool parse_command_line(int argc, char **argv) {
     return true;
 }
 
+void print_view(int j){
+    for(int i = 0; i < word_count; i++)
+        cout << dict[j][i] <<' ';
+    cout << endl;
+}
+
 int main(int argc, char** argv) {
 
     if (!parse_command_line(argc, argv))
@@ -143,20 +149,25 @@ int main(int argc, char** argv) {
     }
 
     //calculate the idf value
-    for(int i = 0; i < word_count; i++)
-        idf[i] = idf[i] == 0 ? 0 : log((float)view_count / idf[i]);
-
+    for(int i = 0; i < word_count; i++) {
+        idf[i] = idf[i] == 0 ? 0 : log((float) view_count / idf[i]);
+        cout << idf[i] <<' ';
+    }
+    cout << endl;
+    cout << "dict\n";
     //calculate the tf-idf value
     for(int i = 0; i < view_count; i++){
         for(int j = 0; j < word_count; j++){
             dict[i][j] *= idf[j];
         }
     }
+    //print_view(0);
 
     ofstream outd(output_data);
 
     outd.write((char*)&view_count, sizeof(int));
     outd.write((char*)&word_count, sizeof(int));
+    outd.write((char*)idf,sizeof(float)*word_count);
 
     for(int i = 0; i < view_count; i++){
         outd.write((char*)dict[i], sizeof(float) * word_count);
