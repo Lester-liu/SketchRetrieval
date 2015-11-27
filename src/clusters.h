@@ -19,11 +19,11 @@ private:
 
 public:
     Blob centers;
-
+    Clusters();
     Clusters(Blob& centers);
     virtual ~Clusters();
-    int size() const; // the number of clusters
-    int dimension() const; // the center dimension
+    int row() const; // the number of clusters
+    int col() const; // the center dimension
     void find_center(Blob& vectors, int *allocation, int n) const; // get nearest neighbor for n vectors
 
 };

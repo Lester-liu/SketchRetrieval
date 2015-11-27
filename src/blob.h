@@ -74,7 +74,8 @@ public:
     Blob(const Blob &blob); // clone constructor
     virtual ~Blob();
 
-    int size() const;
+    int row() const;
+    int col() const;
     float at(int x, int y = 0, int z = 0) const;
 
 };

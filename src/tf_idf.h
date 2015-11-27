@@ -17,15 +17,17 @@ class TF_IDF {
 
 private:
     int word_count; // number of words
-    Clusters tf_idf;
+    Blob tf_idf;
     float *idf; // IDF value of each word
 
 public:
+    TF_IDF();
     TF_IDF(string database_file);
+
     virtual ~TF_IDF();
 
-    int find_center(Blob& tf_value); // given Tf vector, find the nearest document
-
+    int find_nearest(Blob& tf_value); // given Tf vector, find the nearest document
+    int get_word_count();
 };
 
 
