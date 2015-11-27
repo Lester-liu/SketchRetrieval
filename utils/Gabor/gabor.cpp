@@ -16,6 +16,7 @@
  *      i: input image
  *      o: output file
  *      a: picture_path
+ *      m: number of pictures to read
  *
  * Usage:
  *      gabor -k [k] -p [number of points] -n [n] -s [sigma] -t [theta] -l [lambda] -b [beta] -i [Path_to_input] -o [Path_to_output] -a [picture_path]
@@ -35,6 +36,7 @@ int kernel_size = 15;
 int k = 8; // number of directions for Gabor filter
 int window_size = 8; // local feature area (not size)
 int point_per_row = 28;
+int picture_number = 1;
 double sigma = 4;
 double theta = 0;
 double lambda = 10.0;
@@ -140,6 +142,10 @@ bool parse_command_line(int argc, char **argv) {
             case 'a':
                 picture_path = argv[++i];
                 break;
+            case 'm':
+                picture_number = atoi(argv[++i]);
+                break;
+
         }
         i++;
     }
@@ -171,31 +177,34 @@ int main(int argc, char** argv) {
 
     ifstream in(input);
     string picture_name;
-    in >> picture_name;
 
-    //cout << input <<' ' << output <<' ' << picture_path << ' ' << picture_name << endl;
+    for(int pictures  = 0; pictures < picture_number; pictures++) {
+        in >> picture_name;
 
-    Mat img = imread(picture_path + picture_name, CV_LOAD_IMAGE_GRAYSCALE);
-    Mat src;
-    img.convertTo(src, CV_32F);
+        //cout << input <<' ' << output <<' ' << picture_path << ' ' << picture_name << endl;
 
-    double step = CV_PI / k;
+        Mat img = imread(picture_path + picture_name, CV_LOAD_IMAGE_GRAYSCALE);
+        Mat src;
+        img.convertTo(src, CV_32F);
 
-    // build all Gabor filters
-    for(int i = 0; i < k; i++) {
-        Mat kernel = getGaborKernel(Size(kernel_size, kernel_size), sigma,
-                                    theta + step * (double)i, lambda, beta, CV_PI * 0.5, CV_32F);
-        filter2D(src, filters[i], -1, kernel, Point(-1, -1), 0, BORDER_DEFAULT);
+        double step = CV_PI / k;
+
+        // build all Gabor filters
+        for (int i = 0; i < k; i++) {
+            Mat kernel = getGaborKernel(Size(kernel_size, kernel_size), sigma,
+                                        theta + step * (double) i, lambda, beta, CV_PI * 0.5, CV_32F);
+            filter2D(src, filters[i], -1, kernel, Point(-1, -1), 0, BORDER_DEFAULT);
+        }
+
+        // uniformly distributed points
+        int row_gap = (img.rows - window_size) / point_per_row;
+        int col_gap = (img.cols - window_size) / point_per_row;
+
+        for (int i = 0; i < img.rows; i += row_gap)
+            for (int j = 0; j < img.cols; j += col_gap)
+                if (i + window_size < img.rows && j + window_size < img.cols)
+                    result.push_back(get_vector(i, j)); // append new local feature
     }
-
-    // uniformly distributed points
-    int row_gap = (img.rows - window_size) / point_per_row;
-    int col_gap = (img.cols - window_size) / point_per_row;
-
-    for(int i = 0; i < img.rows; i += row_gap)
-        for(int j = 0; j < img.cols; j += col_gap)
-            if (i + window_size < img.rows && j + window_size < img.cols)
-                result.push_back(get_vector(i, j)); // append new local feature
 
     save(output);
     cout << input << " Done!" << endl;

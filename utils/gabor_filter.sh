@@ -1,27 +1,18 @@
 #!/usr/bin/env bash
 
 # One folders with PNG format files and one folder to the contour
-# Ex: bash gabor_filter.sh ../../../data/Sketch/pipeline/contour/ ../../../data/Sketch/pipeline/bin/
+# Ex: bash gabor_filter.sh ../../../data/Sketch/pipeline/view/ ../../../Sketch/pipeline/contour/ ../../../data/Sketch/pipeline/bin/ view.txt
 
-Files="$1"
-Dest_Folder="$2"
+View_Foler="$1"
+Contour_Folder="$2"
+Dest_Folder="$3"
+Name="$4"
 
-for Folder in $Files*/
+for Folder in $View_Foler*/
 do
-    Dest_Folder_Name="${Folder%/}"
-    Dest_Folder_Name="${Dest_Folder_Name##*/}"
-    # Create the folder
-    rm -rf "$Dest_Folder$Dest_Folder_Name/";
-    mkdir "$Dest_Folder$Dest_Folder_Name/";
+    Dest_Name="${Folder%/}"
+    Dest_Name="${Dest_Name##*/}"
+    #echo "./Gabor/Debug/./gabor -i $Folder$Name -o $Dest_Folder$Dest_Name.bin -a $Contour_Folder$Dest_Name/"
+    ./Gabor/Debug/./gabor -i $Folder$Name -o $Dest_Folder$Dest_Name.bin -a $Contour_Folder$Dest_Name/
 
-    for Src in $Folder*.png
-    do
-            #echo $Src
-            # Get the file name (after the last '/')
-            File="${Src##*/}"
-            File="${File%.*}"
-            #echo $Dest_Folder$Dest_Folder_Name/$File
-            # Run the contour_extraction
-            ./Gabor/Release/gabor -i $Src -o $Dest_Folder$Dest_Folder_Name/$File.bin > /dev/null;
-    done
 done
