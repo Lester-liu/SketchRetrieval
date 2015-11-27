@@ -1,3 +1,18 @@
+/*
+ * Merge Binary Files
+ *
+ * Merge will merge all the binary files in a folder into one binary file
+ *
+ * Parameters:
+ *      a: [Folder_path]
+ *      o: [Output_file_name]
+ *      n: [Number_of_total_lines]
+ *      d: [Dimension of each line]
+ *
+ * Usage:
+ *      merge -a [Folder_path] -o [Output_file_name] -n [Number_of_total_lines] -d [Dimension]
+ */
+
 #include <iostream>
 #include <dirent.h>
 #include <fstream>
@@ -7,6 +22,34 @@ using namespace std;
 string path, name, output;
 int k, dim, N;
 float *result;
+
+bool parse_command_line(int argc, char **argv) {
+    int i = 1;
+    while(i < argc) {
+        if (argv[i][0] != '-')
+            break;
+        switch(argv[i][1]) {
+            case 'n':
+                N = atoi(argv[++i]);
+                break;
+            case 'a': // input file
+                path = argv[++i];
+                break;
+            case 'o': // output file
+                output = argv[++i];
+                break;
+            case 'd':
+                dim = atoi(argv[++i]);
+                break;
+
+        }
+        i++;
+    }
+    if (path == "" || output == "" ) { // invalid file name
+        return false;
+    }
+    return true;
+}
 
 void merge(string filename){
 
@@ -28,12 +71,8 @@ void merge(string filename){
 }
 int main(int argc, char** argv) {
 
-    path = argv[1]; // sample folder
-    output = argv[2]; // file name
-    N = atoi(argv[3]);  // line count
-    dim = atoi(argv[4]);
-
-    cout << N << ' ' << dim << endl;
+    if (!parse_command_line(argc, argv))
+        return EXIT_FAILURE;
 
     DIR *dir;
     struct dirent *ent;
@@ -47,7 +86,6 @@ int main(int argc, char** argv) {
         }
     }
 
-    cout << ' ' << k << endl;
     ofstream out(output);
     int lines = k / dim;
     out.write((char*)&lines, sizeof(int));
