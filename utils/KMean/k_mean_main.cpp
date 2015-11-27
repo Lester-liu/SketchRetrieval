@@ -13,7 +13,7 @@
  *      v: value of variation
  *
  * Usage 1 (Training):
- *      k_mean -f [Path_to_file] -k Number_of_center -d [Path_to_output_file] -s [8|32] -i [Iteration] -v [Variation]
+ *      k_mean -1 -f [Path_to_file] -k Number_of_center -d [Path_to_output_file] -s [8|32] -i [Iteration] -v [Variation]
  *
  * N.B. The file format is very specific, it is a binary file with integers and floats, so please pay attention to the
  * big / little endian problem. You may want to generate the file by program in case of theses sorts of problems.
@@ -32,7 +32,7 @@
  *      s: size of the value: 8 for uint8_t, 32 for float
  *
  * Usage 2 (Testing):
- *      k_mean -f [Path_to_input] -t [Path_to_output] -d [Path_to_dictionary] -s [8|32]
+ *      k_mean -2 -f [Path_to_input] -t [Path_to_output] -d [Path_to_dictionary] -s [8|32]
  *
  * Parameters:
  *      f: file containing all Gabor features files name (cases + line per case + names, text file)
@@ -50,21 +50,40 @@
  *      Image_Line_Count (Dimension * 32 bits)
  *
  * Usage 3 (Group_Testing):
- *      k_mean -f [Path_to_folder] -d [Path_to_dictionary] -s [8|32] -c [case_number] -a [data_size] -o [output_file]
+ *      k_mean -3 -f [Path_to_folder] -d [Path_to_dictionary] -s [8|32] -c [case_number] -a [data_size] -o [output_file]
+ *
+ * Parameters:
+ *      f: input file containing the name of all views
+ *      r: folder containing all contour image
+ *      d: path to the dictionary
+ *      s: size of the value
+ *      o: output encoded file
+ *      c: number of image to be considered
+ *      a: data size (number of features in an image)
+ *
+ * Input file:
+ *      Name_i Importance_i
+ *
+ * Usage 4 (Group_Testing_From_Contour):
+ *      k_mean -4 -f [Path_to_file] -r [Folder_to_contour] -d [Path_to_dictionary] -s [8|32] -o [output_file] -c [Cases] -a [data_size]
  */
 
 #include "k_mean.h"
 #include <dirent.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 using namespace k_mean;
+using namespace std;
+using namespace cv;
 
-enum Mode {Group_Testing, Testing, Training}; // Group_Testing for usage 3, Testing for usage 2, Training for usage 1
+enum Mode {Group_Testing, Testing, Training, Contour_Testing}; // Group_Testing for usage 3, Testing for usage 2, Training for usage 1
 enum Format {Integer, Float}; // format of initial data
 
-Mode mode = Group_Testing;
-Format format = Integer;
+Mode mode = Contour_Testing;
+Format data_format = Integer;
 
-string input, output, dictionary, output_file;
+string input, output, dictionary, output_file, root_folder;
 float *data;
 int center_count = 0;
 int data_count = 0;
@@ -88,15 +107,26 @@ bool parse_command_line(int argc, char **argv) {
         if (argv[i][0] != '-')
             break;
         switch(argv[i][1]) {
+            case '1':
+                mode = Training;
+                break;
+            case '2':
+                mode = Testing;
+                break;
+            case '3':
+                mode = Group_Testing;
+                break;
+            case '4':
+                mode = Contour_Testing;
+                break;
             case 'h': // help
                 show_help();
                 return false;
-            case 's': // format
-                format = (argv[++i] == "8") ? Integer : Float;
+            case 's': // data_format
+                data_format = (argv[++i] == "8") ? Integer : Float;
                 break;
             case 'k': // training mode
                 center_count = atoi(argv[++i]);
-                mode = Training;
                 break;
             case 'd': // dictionary file
                 dictionary = argv[++i];
@@ -106,8 +136,6 @@ bool parse_command_line(int argc, char **argv) {
                 break;
             case 't': // output file
                 output = argv[++i];
-                if (mode != Training)
-                    mode = Testing;
                 break;
             case 'v': // variation rate
                 delta = float(atof(argv[++i]));
@@ -123,6 +151,9 @@ bool parse_command_line(int argc, char **argv) {
                 break;
             case 'o':
                 output_file = argv[++i];
+                break;
+            case 'r':
+                root_folder = argv[++i];
                 break;
         }
         i++;
@@ -143,7 +174,7 @@ void training() {
     read_int(in, &dim);
 
     // read data
-    if (format == Integer) {
+    if (data_format == Integer) {
         uint8_t *_data = new uint8_t[dim * data_count];
         read_bytes(in, _data, dim * data_count);
 
@@ -212,7 +243,7 @@ void group_testing() {
             read_int(f, &dim);
 
             // read data
-            if (format == Integer) {
+            if (data_format == Integer) {
                 uint8_t *_data = new uint8_t[dim * data_count];
                 read_bytes(f, _data, dim * data_count);
 
@@ -244,6 +275,61 @@ void group_testing() {
 
 }
 
+void contour_testing() {
+
+    cout << "Contour Testing" << endl;
+
+    ifstream in(input);
+
+    // read the dictionary
+    ifstream dict(dictionary);
+    read_int(dict, &center_count); // read meta-info
+    read_int(dict, &dim); // should be the same
+
+    float *center = new float[dim * center_count];
+    read_floats(dict, center, dim * center_count);
+
+    dict.close();
+
+    data = new float[dim * data_count];
+    int *allocation = new int[data_count];
+
+    // prepare the output file
+    ofstream out(output_file);
+    out.write((char*)&cases, sizeof(int));
+    out.write((char*)&data_count, sizeof(int));
+
+    K_Mean model(data, center, data_count, dim, center_count);
+
+    string file;
+    int tmp;
+    for (int z = 0; z < cases; z++) {
+        in >> file >> tmp;
+
+        // read image
+
+        // use Gabor filter
+
+        // compute the new value
+
+        // replace the data with new image
+        model.update_data();
+        // translate the local features into words
+        model.translate(allocation);
+
+        out.write((char *) allocation, sizeof(int) * data_count);
+
+    }
+
+    in.close();
+    out.close();
+
+    delete[] center;
+    delete[] data;
+    delete[] allocation;
+
+}
+
 void testing() {
 
     cout << "Testing" << endl;
@@ -252,8 +338,10 @@ void testing() {
     read_int(in, &data_count); // read meta-info
     read_int(in, &dim);
 
+    cout << data_count << ' ' << dim << endl;
+
     // read data
-    if (format == Integer) {
+    if (data_format == Integer) {
         uint8_t *_data = new uint8_t[dim * data_count];
         read_bytes(in, _data, dim * data_count);
 
@@ -320,6 +408,9 @@ int main(int argc, char **argv) {
             break;
         case Training:
             training();
+            break;
+        case Contour_Testing:
+            contour_testing();
             break;
         default:
             return EXIT_FAILURE;

@@ -12,6 +12,6 @@ do
     Dest_Name="${Folder%/}"
     Dest_Name="${Dest_Name##*/}"
     #echo Dest_Name
-    #echo "./KMean/Debug/./k_mean -f $Folder -d $Dict -s 32 -c $Cases -a 1089 -o $Output$Dest_Name.trans"
+    #echo "./KMean/Debug/./k_mean -f $Folder -d $Dict -s 32 -c $Cases -a 784 -o $Output$Dest_Name.trans"
     ./KMean/Release/./k_mean -f $Folder -d $Dict -s 32 -c $Cases -a 784 -o $Output$Dest_Name.trans
 done

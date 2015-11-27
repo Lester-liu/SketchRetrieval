@@ -157,10 +157,10 @@ namespace k_mean {
         callCuda(cudaMalloc(&d_tmp_diff, sizeof(float) * dim * center_count));
         callCuda(cudaMalloc(&d_tmp_dist, sizeof(float) * center_count));
         callCuda(cudaMalloc(&d_allocation_val_csr, sizeof(float) * (data_count)));
-        callCuda(cudaMalloc(&d_allocation_row_csr, sizeof(int) * (data_count + 1))); // CRS format
+        callCuda(cudaMalloc(&d_allocation_row_csr, sizeof(int) * (data_count + 1))); // CRS data_format
         callCuda(cudaMalloc(&d_allocation_col_csr, sizeof(int) * (data_count)));
         callCuda(cudaMalloc(&d_allocation_val_csc, sizeof(float) * (data_count)));
-        callCuda(cudaMalloc(&d_allocation_col_csc, sizeof(int) * (data_count))); // CRS format
+        callCuda(cudaMalloc(&d_allocation_col_csc, sizeof(int) * (data_count))); // CRS data_format
         callCuda(cudaMalloc(&d_allocation_row_csc, sizeof(int) * (center_count + 1)));
         callCuda(cudaMalloc(&d_cluster_size, sizeof(float) * center_count));
         callCuda(cudaMalloc(&d_one, sizeof(float) * max(data_count, max(dim, center_count)))); // long enough
@@ -197,10 +197,10 @@ namespace k_mean {
         callCuda(cudaMalloc(&d_tmp_diff, sizeof(float) * dim * center_count));
         callCuda(cudaMalloc(&d_tmp_dist, sizeof(float) * center_count));
         callCuda(cudaMalloc(&d_allocation_val_csr, sizeof(float) * (data_count)));
-        callCuda(cudaMalloc(&d_allocation_row_csr, sizeof(int) * (data_count + 1))); // CRS format
+        callCuda(cudaMalloc(&d_allocation_row_csr, sizeof(int) * (data_count + 1))); // CRS data_format
         callCuda(cudaMalloc(&d_allocation_col_csr, sizeof(int) * (data_count)));
         callCuda(cudaMalloc(&d_allocation_val_csc, sizeof(float) * (data_count)));
-        callCuda(cudaMalloc(&d_allocation_col_csc, sizeof(int) * (data_count))); // CRS format
+        callCuda(cudaMalloc(&d_allocation_col_csc, sizeof(int) * (data_count))); // CRS data_format
         callCuda(cudaMalloc(&d_allocation_row_csc, sizeof(int) * (center_count + 1)));
         callCuda(cudaMalloc(&d_cluster_size, sizeof(float) * center_count));
         callCuda(cudaMalloc(&d_one, sizeof(float) * max(data_count, max(dim, center_count)))); // long enough
