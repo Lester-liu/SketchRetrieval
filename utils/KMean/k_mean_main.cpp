@@ -315,9 +315,8 @@ void contour_testing() {
 
     string file;
     int tmp;
-    int d = 0;
 
-    //calculate of kernels
+    // pre-calculate kernels
     double step = CV_PI / k;
     vector<Mat> kernels;
     for(int i = 0; i < k; i++) {
@@ -329,16 +328,15 @@ void contour_testing() {
     for (int z = 0; z < cases; z++) {
         in >> file >> tmp;
 
-        vector<Mat> filter(k);
+        int d = 0;
+        vector<Mat> filters(k);
         // read image
         Mat img = imread(root_folder + file, CV_LOAD_IMAGE_GRAYSCALE);
-        img.convertTo(img,CV_32F);
-
+        img.convertTo(img, CV_32F);
 
         //use gabor filter
-        for(int i = 0; i < k; i++){
-            filter2D(img, filter[i], -1, kernels[i], Point(-1, -1), 0, BORDER_DEFAULT);
-        }
+        for(int i = 0; i < k; i++)
+            filter2D(img, filters[i], -1, kernels[i], Point(-1, -1), 0, BORDER_DEFAULT);
 
         // compute the new value
 
@@ -346,17 +344,12 @@ void contour_testing() {
         int row_gap = (img.rows - window_size) / point_per_row;
         int col_gap = (img.cols - window_size) / point_per_row;
 
-        for(int i = 0; i < img.rows - window_size; i += row_gap){
-            for(int j = 0; j < img.cols - window_size; j += col_gap){
-                for(int kk = 0; kk < k; kk++){
-                    for(int u = 0; u < window_size; u++){
-                        for(int v = 0; v < window_size; v++){
-                            data[d++] = filters[kk].at<float>(u + i, v + j);
-                        }
-                    }
-                }
-            }
-        }
+        for(int i = 0; i < img.rows - window_size; i += row_gap)
+            for(int j = 0; j < img.cols - window_size; j += col_gap)
+                for(int dir = 0; dir < k; dir++)
+                    for(int u = 0; u < window_size; u++)
+                        for(int v = 0; v < window_size; v++)
+                            data[d++] = filters[dir].at<float>(u + i, v + j);
 
         model.update_data();
         // translate the local features into words
