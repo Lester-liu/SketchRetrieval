@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 # Use K-Means to cluster all vectors
-# Ex: bash cluster.sh ../../../../data/TinySketch/vectors.bin 512 ../../../../data/TinySketch/result.dict 20 0.01
+# Ex: bash cluster.sh ../../../data/Sketch/vectors.bin 1024 ../../../data/Sketch/result.dict 20 0.01
 
 Vectors="$1"
-Dict="$2"
-K="$3"
+Dict="$3"
+K="$2"
 Iteration="$4"
 V="$5"
 
