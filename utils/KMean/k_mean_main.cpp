@@ -185,6 +185,8 @@ void training() {
     read_int(in, &data_count); // read meta-info
     read_int(in, &dim);
 
+    data_count = min(1<<19, data_count);
+
     // read data
     if (data_format == Integer) {
         uint8_t *_data = new uint8_t[dim * data_count];

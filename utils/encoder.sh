@@ -1,20 +1,19 @@
 #!/usr/bin/env bash
 
-#Ex: bash encoder.sh ../Sketch/pipeline/bin/ /Sketch/pipeline/dict.txt ../Sketch/dic/ 36
+#Ex: bash encoder.sh ../../../data/Sketch/SHREC13_SBR_Model_Index.txt ../../../data/TinySketch/views/ view.txt ../../../data/TinySketch/contours/ ../../../data/TinySketch/result.dict ../../../data/TinySketch/encodes/ 36 784
 
-Path="$1" #path of input(ex: binary folder)
-Dict="$2" #path of dictionary
-Output="$3" #path of output folder
-Cases="$4" #case number
+Indexer="$1" # file containing all models' name
+View_Path="$2" # folder to views (containing the selector result file)
+View_File="$3" # selector result name
+Contour_Path="$4" # path to contour folder
+Dict="$5"; # dictionary file
+Encode_Folder="$6" # path to output folder
+Cases="$7" # case number (select some images)
+Size="$8" # number of local features per image
 
-for Folder in $Path*/
+while read -r Line
 do
-    Dest_Name="${Folder%/}"
-    Dest_Name="${Dest_Name##*/}"
-    #echo Dest_Name
-    echo "./KMean/Debug/./k_mean -f $Folder -d $Dict -s 32 -c $Cases -a 784 -o $Output$Dest_Name.trans"
-    ./KMean/Release/./k_mean -4 -f $Folder -d $Dict -s 32 -c $Cases -a 784 -o $Output$Dest_Name.trans
-    #-f [Path_to_file] -r [Folder_to_contour] -d [Path_to_dictionary] -s [8|32] -o [output_file] -c [Cases] -a [data_size]
-    k_mean -4 -f ../../../../data/TinySketch/views/m87/view.txt -r ../../../../data/TinySketch/contours/m87/ -d ../../../../data/TinySketch/result.dict -s 32 -o ../../../../data/TinySketch/encodes/m87.trans -c 36 -a 784
-
-done
+    Model=${Line%%[[:space:]]} # trailing end of line
+    #echo "./KMean/Release/k_mean -4 -f $View_Path$Model/$View_File -r $Contour_Path$Model/ -d $Dict -s 32 -o $Encode_Folder$Model.trans -c $Cases -a $Size" > /home/lyx/test
+    ./KMean/Release/k_mean -4 -f $View_Path$Model/$View_File -r $Contour_Path$Model/ -d $Dict -s 32 -o $Encode_Folder$Model.trans -c $Cases -a $Size
+done < "$Indexer"

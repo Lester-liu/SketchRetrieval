@@ -8,9 +8,10 @@
  *      o: [Output_file_name]
  *      n: [Number_of_total_lines]
  *      d: [Dimension of each line]
+ *      s: Skip size
  *
  * Usage:
- *      merge -a [Folder_path] -o [Output_file_name] -n [Number_of_total_lines] -d [Dimension]
+ *      merge -a [Folder_path] -o [Output_file_name] -n [Number_of_total_lines] -d [Dimension] -s [Skip]
  */
 
 #include <iostream>
@@ -20,7 +21,7 @@
 using namespace std;
 
 string path, name, output;
-int k, dim, N;
+int k, dim, N, skip;
 float *result;
 
 bool parse_command_line(int argc, char **argv) {
@@ -41,7 +42,9 @@ bool parse_command_line(int argc, char **argv) {
             case 'd':
                 dim = atoi(argv[++i]);
                 break;
-
+            case 's':
+                skip = atoi(argv[++i]);
+                break;
         }
         i++;
     }
@@ -78,9 +81,13 @@ int main(int argc, char** argv) {
     struct dirent *ent;
     result = new float[N * dim];
     k = 0;
+    int index = 0;
     if ((dir = opendir(path.c_str())) != NULL){
         while((ent = readdir(dir)) != NULL){
             string filename = ent->d_name;
+            index++;
+            if (index % skip != 0)
+                continue;
             //cout << path + "/" + filename << endl;
             merge(path + "/" + filename);
         }
