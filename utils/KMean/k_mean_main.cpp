@@ -337,7 +337,7 @@ void contour_testing() {
 
         //use gabor filter
         for(int i = 0; i < k; i++){
-            filter2D(src, filters[i], -1, kernels[i], Point(-1, -1), 0, BORDER_DEFAULT);
+            filter2D(img, filter[i], -1, kernels[i], Point(-1, -1), 0, BORDER_DEFAULT);
         }
 
         // compute the new value

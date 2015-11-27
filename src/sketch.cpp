@@ -47,6 +47,18 @@ string database_file, label_file, input_file, dictionary_file;
 
 string model_base = "/home/lyx/workspace/data/TinySketch/models_ply/";
 
+vector<Mat> kernels;
+
+int k = 8;
+int kernel_size = 15;
+double sigma = 4;
+double theta = 0;
+double lambda = 10.0;
+double beta = 0.5;
+int window_size = 8; // local feature area (not size)
+int point_per_row = 28;
+int data_count = 0;
+
 void show_help();
 
 int retrieve(Mat& image, Clusters& dictionary); // return the index of model
@@ -83,12 +95,56 @@ int main(int argc, char** argv) {
     return EXIT_SUCCESS;
 }
 
+void kernel(){
+
+    double step = CV_PI / k;
+    vector<Mat> kernels;
+
+    for(int i = 0; i < k; i++) {
+        Mat kernel = getGaborKernel(Size(kernel_size, kernel_size), sigma,
+                                    theta + step * (double) i, lambda, beta, CV_PI * 0.5, CV_32F);
+        kernels.push_back(kernel);
+    }
+}
+
+void gabor_filter(Mat & img , float* data){
+    if (kernels.empty())
+        kernel();
+
+    vector<Mat> filter(k);
+
+    for(int i = 0; i < k; i++){
+        filter2D(img, filter[i], -1, kernels[i], Point(-1, -1), 0, BORDER_DEFAULT);
+    }
+
+    int d = 0;
+    int row_gap = (img.rows - window_size) / point_per_row;
+    int col_gap = (img.cols - window_size) / point_per_row;
+
+    for(int i = 0; i < img.rows - window_size; i += row_gap){
+        for(int j = 0; j < img.cols - window_size; j += col_gap){
+            for(int kk = 0; kk < k; kk++){
+                for(int u = 0; u < window_size; u++){
+                    for(int v = 0; v < window_size; v++){
+                        data[d++] = filter[kk].at<float>(u + i, v + j);
+                    }
+                }
+            }
+        }
+    }
+
+}
 // return the index of model
 int retrieve(Mat& image, Clusters& dictionary) {
     // use Gabor filter
+    int dim = window_size * window_size * k;
+    float *data = new float[data_count * dim];
+    gabor_filter(image, data);
+    Blob blob(data,Dim(data_count, dim, 1));
 
     // translate into words
-
+    int* word = new int[data_count];
+    dictionary.find_center(blob, word, data_count);
     // compute TF-IDF
 
     // get nearest neighbor
