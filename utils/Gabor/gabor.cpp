@@ -32,8 +32,8 @@ string input, output;
 
 int kernel_size = 15;
 int k = 8; // number of directions for Gabor filter
-int window_size = 16; // local feature area (not size)
-int point_per_row = 24;
+int window_size = 8; // local feature area (not size)
+int point_per_row = 28;
 double sigma = 4;
 double theta = 0;
 double lambda = 10.0;

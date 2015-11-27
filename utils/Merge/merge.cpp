@@ -28,9 +28,9 @@ void merge(string filename){
 }
 int main(int argc, char** argv) {
 
-    path = argv[1];
-    output = argv[2];
-    N = atoi(argv[3]);
+    path = argv[1]; // sample folder
+    output = argv[2]; // file name
+    N = atoi(argv[3]);  // line count
     dim = atoi(argv[4]);
 
     cout << N << ' ' << dim << endl;

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # One folders with PNG format files and the name of the output file
-# bash view_selector.sh ../../../data/TinySketch/view/
+# Ex: bash view_selector.sh ../../../data/TinySketch/view/ view.txt
 
 Files="$1"
 Name="$2"
