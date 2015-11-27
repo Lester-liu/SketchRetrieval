@@ -7,10 +7,12 @@
 
 TF_IDF::TF_IDF() {
     word_count = 0;
+    idf = new float[0];
 }
 
 TF_IDF::TF_IDF(string database_file) {
     ifstream input(database_file);
+
     int picture_count;
     input.read((char*)&picture_count, sizeof(int));
     input.read((char*)&word_count, sizeof(int));
@@ -18,38 +20,53 @@ TF_IDF::TF_IDF(string database_file) {
     idf = new float[word_count];
     input.read((char*)idf, sizeof(float) * word_count);
 
-    float *data = new float[word_count * picture_count];
+    float* data = new float[word_count * picture_count];
     input.read((char*)data, sizeof(float) * word_count * picture_count);
-    tf_idf = Blob(data,Dim(picture_count,word_count,1));
+
+    int d = 0;
+
+    Mat b(Size(word_count,picture_count),CV_32F);
+    for(int i = 0; i < picture_count; i++){
+        for(int j = 0; j < word_count; j++){
+            b.at<float>(i,j) = data[d++];
+        }
+    }
+    tf_idf = b;
+
+    input.close();
 }
 
-int TF_IDF::find_nearest(Blob &tf_value) {
-    assert(tf_value.row() == 1);
-    assert(tf_value.col() == word_count);
+int TF_IDF::find_nearest(Mat &tf_value) {
+    assert(tf_value.rows == 1);
+    assert(tf_value.cols == word_count);
     float norm = 0;
     for(int i = 0; i < word_count; i++){
-        float tmp = tf_value.at(0,i,0) * idf[i];
+        float tmp = (float)tf_value.at<int>(0,i) * idf[i];
         norm += tmp * tmp;
+
     }
     norm = sqrt(norm);
 
-    int mini = -1;
-    float mini_value = 0;
-    for(int i = 1; i < tf_idf.row(); i++){
+    int maxi = -1;
+    float max_value = 0;
+    for(int i = 0; i < tf_idf.rows; i++){
         float tmp = 0;
         float normi = 0;
         for(int j = 0; j < word_count; j++){
-            tmp += tf_idf.at(i,j,0) * tf_value.at(0,j,0) * idf[j];
-            normi += tf_idf.at(i,j,0) * tf_idf.at(i,j,0);
+            tmp += tf_idf.at<float>(i,j) * (float)tf_value.at<int>(0,j) * idf[j];
+            normi += tf_idf.at<float>(i,j) * tf_idf.at<float>(i,j);
         }
         tmp = tmp / norm / sqrt(normi);
-        if (mini == -1  || tmp < mini_value){
-            mini = i;
-            mini_value = tmp;
+        if (maxi == -1  || tmp > max_value){
+            maxi = i;
+            max_value = tmp;
         }
     }
-    return mini;
+    cout << max_value <<endl;
+    return maxi;
 }
+
+TF_IDF::~TF_IDF() { };
 
 int TF_IDF::get_word_count() {
     return word_count;

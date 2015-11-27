@@ -51,3 +51,7 @@ int Blob::col() const{
 float Blob::at(int x, int y, int z) const {
     return data[dim.get_index(x, y, z)];
 }
+
+/*void Blob::operator()(const Blob& blob) {
+
+}*/

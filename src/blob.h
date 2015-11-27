@@ -78,6 +78,8 @@ public:
     int col() const;
     float at(int x, int y = 0, int z = 0) const;
 
+    //void operator()(const Blob& blob);
+
 };
 
 

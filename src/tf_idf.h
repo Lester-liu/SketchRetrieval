@@ -17,7 +17,7 @@ class TF_IDF {
 
 private:
     int word_count; // number of words
-    Blob tf_idf;
+    Mat tf_idf;
     float *idf; // IDF value of each word
 
 public:
@@ -26,7 +26,7 @@ public:
 
     virtual ~TF_IDF();
 
-    int find_nearest(Blob& tf_value); // given Tf vector, find the nearest document
+    int find_nearest(Mat& tf_value); // given Tf vector, find the nearest document
     int get_word_count();
 };
 

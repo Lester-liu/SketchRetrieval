@@ -7,7 +7,9 @@
 
 #include <cassert>
 #include <climits>
-#include "blob.h"
+#include "opencv2/opencv.hpp"
+
+using namespace cv;
 
 /*
  * This class is similar to K-means, but it is a CPU version to find a nearest neighbor
@@ -15,16 +17,16 @@
 class Clusters {
 
 private:
-    int find_center(float *vector) const; // get cluster number of one vector
+    int find_center(Mat& vector , int x) const; // get cluster number of one vector
 
 public:
-    Blob centers;
+    Mat centers;
     Clusters();
-    Clusters(Blob& centers);
+    Clusters(Mat& centers);
     virtual ~Clusters();
-    int row() const; // the number of clusters
+    int row() const; // the number of centers
     int col() const; // the center dimension
-    void find_center(Blob& vectors, int *allocation, int n) const; // get nearest neighbor for n vectors
+    void find_center(Mat& vectors, int *allocation, int n) const; // get nearest neighbor for n vectors
 
 };
 

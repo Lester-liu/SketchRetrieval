@@ -5,26 +5,26 @@
 #include "clusters.h"
 
 Clusters::Clusters() { }
-Clusters::Clusters(Blob& centers) : centers(centers) { }
+Clusters::Clusters(Mat& centers) : centers(centers) { }
 
 Clusters::~Clusters() { }
 
 int Clusters::row() const {
-    return centers.dim.x;
+    return centers.rows;
 }
 
 int Clusters::col() const {
-    return centers.dim.y;
+    return centers.cols;
 }
 
-void Clusters::find_center(Blob& vector, int *allocation, int n) const {
-    assert(vector.dim.x == n); // x is the number of lines, y is the dimension of vector
+void Clusters::find_center(Mat& vector, int *allocation, int n) const {
+    assert(vector.rows == n); // x is the number of lines, y is the dimension of vector
     // find neighbor for all instances
     for (int i = 0; i < n; i++)
-        allocation[i] = find_center(vector.data + i * vector.dim.y);
+        allocation[i] = find_center(vector,i);
 }
 
-int Clusters::find_center(float *vector) const {
+int Clusters::find_center(Mat& vector, int x) const {
     int index = -1;
     float dist = std::numeric_limits<float>::max();
 
@@ -32,7 +32,7 @@ int Clusters::find_center(float *vector) const {
     for (int i = 0; i < row(); i++) {
         float tmp = 0;
         for (int j = 0; j < col(); j++)
-            tmp += (vector[j] - centers.at(i, j)) * (vector[j] - centers.at(i, j));
+            tmp += (vector.at<float>(x,j) - centers.at<float>(i, j)) * (vector.at<float>(x,j) - centers.at<float>(i, j));
         if (tmp < dist) {
             dist = tmp;
             index = i;

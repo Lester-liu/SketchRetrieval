@@ -23,8 +23,6 @@
  */
 
 #include <iostream>
-#include <fstream>
-#include "opencv2/opencv.hpp"
 
 #include <vtkPolyData.h>
 #include <vtkPLYReader.h>
@@ -35,11 +33,8 @@
 #include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
 
-#include "clusters.h"
 #include "tf_idf.h"
 
-using namespace cv;
-using namespace std;
 
 enum Mode {Camera, File, Testing};
 Mode mode = Testing;
@@ -59,14 +54,19 @@ double beta = 0.5;
 int window_size = 8; // local feature area (not size)
 int point_per_row = 28;
 int data_count = 0;
+int point_count = 0;
 
 TF_IDF tf_idf;
 
 void show_help();
 
+void read_dict(Clusters &dict);
+
 int retrieve(Mat& image, Clusters& dictionary); // return the index of model
 
 void show_model(string file); // show 3D model with VTK
+
+int to_index(int label);
 
 string to_name(int index); // build 3D model name given the index
 
@@ -79,29 +79,42 @@ int main(int argc, char** argv) {
 
     int model_index = -1;
 
+    ifstream input(dictionary_file);
+    int dim;
+    input.read((char*)&data_count, sizeof(int));
+    input.read((char*)&dim, sizeof(int));
+
+    float* data = new float[data_count * dim];
+    input.read((char*)data, sizeof(float) * data_count * dim);
+    Mat b(Size(dim,data_count),CV_32F,data);
+
+    Clusters dict(b);
+    input.close();
+
     if (mode == File) {
         Mat image_gray = imread(input_file, CV_LOAD_IMAGE_GRAYSCALE);
         Mat image;
         image_gray.convertTo(image, CV_32FC1);
-        //model_index = retrieve(image);
+        int label = retrieve(image, dict);
+
+        cout << label << endl;
+        model_index = to_index(label);
         cout << model_index << endl;
     }
     else if (mode == Camera) {
 
     }
     else { // Testing mode
-        show_model(to_name(87));
+        //show_model(to_name(87));
     }
 
 
 
     return EXIT_SUCCESS;
 }
-
 void kernel(){
 
     double step = CV_PI / k;
-    vector<Mat> kernels;
 
     for(int i = 0; i < k; i++) {
         Mat kernel = getGaborKernel(Size(kernel_size, kernel_size), sigma,
@@ -141,24 +154,36 @@ void gabor_filter(Mat & img , float* data){
 int retrieve(Mat& image, Clusters& dictionary) {
     // use Gabor filter
     int dim = window_size * window_size * k;
-    float *data = new float[data_count * dim];
+    float *data = new float[point_count * dim];
     gabor_filter(image, data);
-    Blob blob(data,Dim(data_count, dim, 1));
+    Mat blob(Size(dim,point_count),CV_32F);
 
+    int d = 0;
+    for(int i = 0; i < point_count; i++){
+        for(int j = 0; j < dim; j++){
+            blob.at<float>(i,j) = data[d++];
+        }
+    }
     // translate into words
-    int* word = new int[data_count];
-    dictionary.find_center(blob, word, data_count);
+    int* word = new int[point_count];
+    dictionary.find_center(blob, word, point_count);
     // compute TF-IDF
-    if (tf_idf.get_word_count() == 0)
-        tf_idf = TF_IDF(dictionary_file);
-    // get nearest neighbor
-    float* wordf = new float[data_count];
-    for(int i = 0; i < data_count; i++)
-        wordf[i] = word[i];
 
-    Dim d(1,data_count,1);
-    Blob b(wordf,d);
-    return tf_idf.find_nearest(b);
+    if (tf_idf.get_word_count() == 0)
+        tf_idf = TF_IDF(database_file);
+
+    //cout << tf_idf.get_word_count() << endl;
+    // get nearest neighbor
+    Mat tf = Mat::zeros(Size(data_count,1),CV_32S);
+    for(int i = 0; i < point_count; i++)
+        tf.at<int>(0,word[i])++;
+
+    int result = tf_idf.find_nearest(tf);
+
+    delete[] data;
+    delete[] word;
+
+    return result;
 }
 
 // show 3D model with VTK
@@ -193,6 +218,20 @@ string to_name(int index) {
     return model_base + "m" + to_string(index) + ".ply";
 }
 
+int to_index(int label){
+    ifstream input(label_file);
+    int model_count, view_count;
+    input >> model_count >> view_count;
+    int k = 0;
+    int tmp;
+    input >> tmp;
+    while(k + view_count <= label){
+        input >> tmp;
+        k = k + view_count;
+    }
+    return tmp;
+}
+
 // Process all arguments
 bool parse_command_line(int argc, char **argv) {
 
@@ -223,12 +262,17 @@ bool parse_command_line(int argc, char **argv) {
             case 'c': // camera mode
                 mode = Camera;
                 break;
+            case 'p':
+                point_count = atoi(argv[++i]);
+                break;
         }
         i++;
     }
+    if (database_file == "" || dictionary_file == "")
+        return false;
     return true;
 }
 
 void show_help() {
-
 }
+
