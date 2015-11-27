@@ -316,6 +316,16 @@ void contour_testing() {
     string file;
     int tmp;
     int d = 0;
+
+    //calculate of kernels
+    double step = CV_PI / k;
+    vector<Mat> kernels;
+    for(int i = 0; i < k; i++) {
+        Mat kernel = getGaborKernel(Size(kernel_size, kernel_size), sigma,
+                                    theta + step * (double) i, lambda, beta, CV_PI * 0.5, CV_32F);
+        kernels.push_back(kernel);
+    }
+
     for (int z = 0; z < cases; z++) {
         in >> file >> tmp;
 
@@ -324,13 +334,10 @@ void contour_testing() {
         Mat img = imread(root_folder + file, CV_LOAD_IMAGE_GRAYSCALE);
         img.convertTo(img,CV_32F);
 
-        double step = CV_PI / k;
 
         //use gabor filter
         for(int i = 0; i < k; i++){
-            MAT kernel = getGaborKernel(Size(kernel_size,kernel_size), sigma,
-                                        theta + step * (double)i, lambda, beta, CV_PI * 0.5, CV_32F);
-            filter2D(src, filters[i], -1, kernel, Point(-1, -1), 0, BORDER_DEFAULT);
+            filter2D(src, filters[i], -1, kernels[i], Point(-1, -1), 0, BORDER_DEFAULT);
         }
 
         // compute the new value

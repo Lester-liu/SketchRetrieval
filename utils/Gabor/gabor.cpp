@@ -180,6 +180,14 @@ int main(int argc, char** argv) {
 
     int tmp;
 
+    //calculate of kernels
+    vector<Mat> kernels;
+    double step = CV_PI / k;
+    for(int i = 0; i < k; i++) {
+        Mat kernel = getGaborKernel(Size(kernel_size, kernel_size), sigma,
+                                    theta + step * (double) i, lambda, beta, CV_PI * 0.5, CV_32F);
+    }
+
     for(int pictures  = 0; pictures < picture_number; pictures++) {
         in >> picture_name >> tmp;
 
@@ -189,13 +197,11 @@ int main(int argc, char** argv) {
         Mat src;
         img.convertTo(src, CV_32F);
 
-        double step = CV_PI / k;
 
         // build all Gabor filters
         for (int i = 0; i < k; i++) {
-            Mat kernel = getGaborKernel(Size(kernel_size, kernel_size), sigma,
-                                        theta + step * (double) i, lambda, beta, CV_PI * 0.5, CV_32F);
-            filter2D(src, filters[i], -1, kernel, Point(-1, -1), 0, BORDER_DEFAULT);
+
+            filter2D(src, filters[i], -1, kernels[i], Point(-1, -1), 0, BORDER_DEFAULT);
         }
 
         // uniformly distributed points
