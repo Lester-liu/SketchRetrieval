@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # One folders with PLY format files and one folder to the image
+# Ex: bash renderer.sh ../../../data/TinySketch/models_ply/ ../../../data/TinySketch/view/ 6
 
 Files="$1*.ply"
 Dest_Folder="$2"

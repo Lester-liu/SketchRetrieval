@@ -256,6 +256,7 @@ namespace k_mean {
             //callCuda(cudaMemcpy(center, d_center, sizeof(float) * dim * center_count, cudaMemcpyDeviceToHost));
             //print_center();
             find_nearest_center();
+            printCpuMatrix(cluster_size, min(100, center_count), 1, min(100, center_count), 0);
             update_center();
             //print_center();
         }

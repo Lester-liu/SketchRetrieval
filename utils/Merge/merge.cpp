@@ -1,39 +1,36 @@
 #include <iostream>
-#include<sstream>
-#include<dirent.h>
-#include<fstream>
+#include <dirent.h>
+#include <fstream>
 
 using namespace std;
-string path,name,output;
+
+string path, name, output;
 int k, dim, N;
 float *result;
 
 void merge(string filename){
+
     if (!ifstream(filename))
         return;
     ifstream input(filename);
-    int n,size;
-    if (!input.read((char*)&n,sizeof(int)))
+    int n, size;
+    if (!input.read((char*)&n, sizeof(int)))
         return;
-    if (!input.read((char*)&size,sizeof(int)))
+    if (!input.read((char*)&size, sizeof(int)))
         return;
     float tmp;
     //cout << n <<' ' << size;
-    for(int i = 0; i < n*size; i++){
-        input.read((char*)&tmp,sizeof(float));
+    for(int i = 0; i < n * size; i++){
+        input.read((char*)&tmp, sizeof(float));
         result[k++] = tmp;
     }
+
 }
 int main(int argc, char** argv) {
-    stringstream ss;
-    ss << argv[1];
-    ss >> path;
-    ss.clear();
 
-    ss << argv[2];
-    ss >> output;
-
-    N = atoi(argv[3]);
+    path = argv[1]; // sample folder
+    output = argv[2]; // file name
+    N = atoi(argv[3]);  // line count
     dim = atoi(argv[4]);
 
     cout << N << ' ' << dim << endl;
@@ -52,11 +49,11 @@ int main(int argc, char** argv) {
 
     cout << ' ' << k << endl;
     ofstream out(output);
-    int lines = k/dim;
-    out.write((char*)&lines,sizeof(int));
-    out.write((char*)&dim,sizeof(int));
-    out.write((char*)result,sizeof(float) * k);
+    int lines = k / dim;
+    out.write((char*)&lines, sizeof(int));
+    out.write((char*)&dim, sizeof(int));
+    out.write((char*)result, sizeof(float) * k);
     out.close();
 
-    return 0;
+    return EXIT_SUCCESS;
 }

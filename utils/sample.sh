@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-#exemple sample.sh ../Sketch/views/ ../Sketch/bin/ view.txt ../Sketch/sample/
+
+#Ex: bash sample.sh ../Sketch/views/ ../Sketch/bin/ view.txt ../Sketch/sample/
 
 Files="$1"
 Bin_Path="$2"

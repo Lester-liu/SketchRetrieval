@@ -23,8 +23,8 @@
 
 using namespace std;
 using namespace cv;
-const int lines = 1000;
-const int size = 128;
+const int lines = 25000;
+const int size = 512;
 
 string input, bin_path, output;
 int line_number;
@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
     result = new float[lines * size];
 
     while(line_number < lines && (!in.eof())){
-        in >> file_name;
+        in >> file_name >> tmp;
         file_name = file_name.substr(0, file_name.length() - 4);
         get_vectors(bin_path + file_name +".bin");
     }

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # One folders with PNG format files and one folder to the contour
+# Ex: bash contour_extractor.sh ../../../data/TinySketch/view/ ../../../data/TinySketch/contour/
 
 Files="$1"
 Dest_Folder="$2"
