@@ -178,8 +178,10 @@ int main(int argc, char** argv) {
     ifstream in(input);
     string picture_name;
 
+    int tmp;
+
     for(int pictures  = 0; pictures < picture_number; pictures++) {
-        in >> picture_name;
+        in >> picture_name >> tmp;
 
         //cout << input <<' ' << output <<' ' << picture_path << ' ' << picture_name << endl;
 

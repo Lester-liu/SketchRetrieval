@@ -93,6 +93,18 @@ int cases = 0;
 int iteration = 0;
 float delta = 0;
 
+
+int kernel_size = 15;
+int k = 8; // number of directions for Gabor filter
+int window_size = 8; // local feature area (not size)
+int point_per_row = 28;
+double sigma = 4;
+double theta = 0;
+double lambda = 10.0;
+double beta = 0.5;
+
+
+
 void show_help() {
 
 }
@@ -303,16 +315,42 @@ void contour_testing() {
 
     string file;
     int tmp;
+    int d = 0;
     for (int z = 0; z < cases; z++) {
         in >> file >> tmp;
 
+        vector<MAT> filter[k];
         // read image
+        Mat img = imread(root_folder + file, CV_LOAD_IMAGE_GRAYSCALE);
+        img.convertTo(img,CV_32F);
 
-        // use Gabor filter
+        double step = CV_PI / k;
+
+        //use gabor filter
+        for(int i = 0; i < k; i++){
+            MAT kernel = getGaborKernel(Size(kernel_size,kernel_size), sigma,
+                                        theta + step * (double)i, lambda, beta, CV_PI * 0.5, CV_32F);
+            filter2D(src, filters[i], -1, kernel, Point(-1, -1), 0, BORDER_DEFAULT);
+        }
 
         // compute the new value
 
         // replace the data with new image
+        int row_gap = (img.rows - window_size) / point_per_row;
+        int col_gap = (img.cols - window_size) / point_per_row;
+
+        for(int i = 0; i < img.rows - window_size; i += row_gap){
+            for(int j = 0; j < img.cols - window_size; j += col_gap){
+                for(int kk = 0; kk < k; kk++){
+                    for(int u = 0; u < window_size; u++){
+                        for(int v = 0; v < window_size; v++){
+                            data[d++] = filters[kk].at<float>(u + i, v + j);
+                        }
+                    }
+                }
+            }
+        }
+
         model.update_data();
         // translate the local features into words
         model.translate(allocation);
