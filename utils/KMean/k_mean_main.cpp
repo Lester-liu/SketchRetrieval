@@ -329,7 +329,7 @@ void contour_testing() {
     for (int z = 0; z < cases; z++) {
         in >> file >> tmp;
 
-        vector<MAT> filter[k];
+        vector<Mat> filter(k);
         // read image
         Mat img = imread(root_folder + file, CV_LOAD_IMAGE_GRAYSCALE);
         img.convertTo(img,CV_32F);
