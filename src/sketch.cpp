@@ -101,8 +101,8 @@ int main(int argc, char** argv) {
                 for (int j = 0; j < image_scale.cols; j++)
                     image_scale.at<uchar>(i, j) = (image_scale.at<uchar>(i, j) > 250) ? 0 : 255;
         Mat image;
-        imshow("Sketch", image_gray); // show sketch
-        waitKey(2);
+        //imshow("Sketch", image_scale); // show sketch
+        //waitKey(2);
 
         image_scale.convertTo(image, CV_32F);
         int label = retrieve(image, dict); // document index

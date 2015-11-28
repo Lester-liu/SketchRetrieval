@@ -159,6 +159,8 @@ bool parse_command_line(int argc, char **argv) {
     return true;
 }
 
+const int dir[8][2] = {{1, 0}, {1, 1}, {0, 1}, {-1, 1}, {-1, 0}, {-1, -1}, {0, -1}, {1, -1}};
+
 int main(int argc, char **argv) {
 
     background = new double[3];
@@ -195,41 +197,42 @@ int main(int argc, char **argv) {
     // use all possible angle combinations
     for(int i = 0; i < step_count; i++, theta += step) {
         for(int j = 0; j < step_count; j++, phi += step) {
+            for (int d = 0; d < 8; d++) {
+                position = from_polar(camera_distance, phi, theta);
 
-            position = from_polar(camera_distance, phi,theta);
+                vtkSmartPointer<vtkCamera> camera = vtkSmartPointer<vtkCamera>::New();
+                camera->SetPosition(position.x + center.x, position.y + center.y, position.z + center.z);
+                camera->SetFocalPoint(center.x, center.y, center.z);
+                camera->SetViewUp(0, dir[d][0], dir[d][1]);
 
-            vtkSmartPointer<vtkCamera> camera = vtkSmartPointer<vtkCamera>::New();
-            camera->SetPosition(position.x + center.x, position.y + center.y, position.z + center.z);
-            camera->SetFocalPoint(center.x, center.y, center.z);
+                vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+                renderer->SetActiveCamera(camera);
+                renderer->AddActor(actor);
+                renderer->SetBackground(background); // Black background
 
-            vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-            renderer->SetActiveCamera(camera);
-            renderer->AddActor(actor);
-            renderer->SetBackground(background); // Black background
+                vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+                renderWindow->AddRenderer(renderer);
+                renderWindow->SetSize(64, 64); // width, height
+                renderWindow->SetOffScreenRendering(1); // Off Screen rendering
 
-            vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-            renderWindow->AddRenderer(renderer);
-            renderWindow->SetSize(64, 64); // width, height
-            renderWindow->SetOffScreenRendering(1); // Off Screen rendering
+                renderWindow->Render(); // Renderer needs a windows to render its image
 
-            renderWindow->Render(); // Renderer needs a windows to render its image
+                vtkSmartPointer<vtkRenderLargeImage> renderLarge = vtkSmartPointer<vtkRenderLargeImage>::New();
+                renderLarge->SetInput(renderer);
+                renderLarge->SetMagnification(1);
 
-            vtkSmartPointer<vtkRenderLargeImage> renderLarge = vtkSmartPointer<vtkRenderLargeImage>::New();
-            renderLarge->SetInput(renderer);
-            renderLarge->SetMagnification(1);
+                vtkSmartPointer<vtkPNGWriter> writer =
+                        vtkSmartPointer<vtkPNGWriter>::New();
 
-            vtkSmartPointer<vtkPNGWriter> writer =
-                    vtkSmartPointer<vtkPNGWriter>::New();
+                // use angles in the file name
+                string suffix = "";
+                if (mode == Group)
+                    suffix = '_' + to_string(((int) theta) % 360) + '_' + to_string(((int) phi) % 360) + '_' + to_string(d) + ".png";
 
-            // use angles in the file name
-            string suffix = "";
-            if (mode == Group)
-                suffix = '_' + to_string(((int)theta) % 360) + '_' + to_string(((int)phi) % 360) + ".png";
-
-            writer->SetFileName((output + suffix).c_str());
-            writer->SetInputConnection(renderLarge->GetOutputPort());
-            writer->Write();
-
+                writer->SetFileName((output + suffix).c_str());
+                writer->SetInputConnection(renderLarge->GetOutputPort());
+                writer->Write();
+            }
         }
     }
 
