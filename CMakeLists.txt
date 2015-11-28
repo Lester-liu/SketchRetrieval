@@ -17,6 +17,6 @@ INCLUDE(${VTK_USE_FILE})
 PROJECT(Sketch)
 
 SET(MAIN src/sketch.cpp)
-ADD_EXECUTABLE(sketch ${MAIN} src/blob.cpp src/clusters.cpp src/tf_idf.cpp)
+ADD_EXECUTABLE(sketch ${MAIN} src/clusters.cpp src/tf_idf.cpp)
 
 TARGET_LINK_LIBRARIES(sketch ${OpenCV_LIBS} ${VTK_LIBRARIES})

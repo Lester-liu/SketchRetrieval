@@ -16,10 +16,10 @@
  *      f: file mode with input image file path
  *
  * Usage 1 (file based query):
- *      sketch -d [database_file] -w [dictionary_file] -l [label_file] -m [nodel_folder] -f [input_file]
+ *      sketch -d [database_file] -w [dictionary_file] -l [label_file] -m [model_folder] -f [input_file]
  *
  * Usage 2 (real-time query with camera):
- *      sketch -d [database_file] -w [dictionary_file] -l [label_file] -m [nodel_folder] -c
+ *      sketch -d [database_file] -w [dictionary_file] -l [label_file] -m [model_folder] -c
  */
 
 #include <iostream>
@@ -34,7 +34,7 @@
 #include <vtkRenderWindowInteractor.h>
 
 #include "tf_idf.h"
-
+#include "clusters.h"
 
 enum Mode {Camera, File, Testing};
 Mode mode = Testing;
@@ -45,7 +45,7 @@ string model_base = "/home/lyx/workspace/data/TinySketch/models_ply/";
 
 vector<Mat> kernels;
 
-int k = 8;
+int k = 8; // number of Gabor filters
 int kernel_size = 15;
 double sigma = 4;
 double theta = 0;
@@ -53,10 +53,9 @@ double lambda = 10.0;
 double beta = 0.5;
 int window_size = 8; // local feature area (not size)
 int point_per_row = 28;
-int data_count = 0;
-int point_count = 0;
-
-TF_IDF tf_idf;
+int center_count = 0;
+int dim = 0;
+int feature_count = point_per_row * point_per_row; // number of features per image
 
 void show_help();
 
@@ -80,16 +79,14 @@ int main(int argc, char** argv) {
     int model_index = -1;
 
     ifstream input(dictionary_file);
-    int dim;
-    input.read((char*)&data_count, sizeof(int));
-    input.read((char*)&dim, sizeof(int));
+    input.read((char*) &center_count, sizeof(int));
+    input.read((char*) &dim, sizeof(int));
 
-    float* data = new float[data_count * dim];
-    input.read((char*)data, sizeof(float) * data_count * dim);
-    Mat b(Size(dim,data_count),CV_32F,data);
-
-    Clusters dict(b);
+    float *centers = new float[center_count * dim];
+    input.read((char*) centers, sizeof(float) * center_count * dim);
     input.close();
+
+    Clusters dict(centers, center_count, dim);
 
     if (mode == File) {
         Mat image_gray = imread(input_file, CV_LOAD_IMAGE_GRAYSCALE);
@@ -108,12 +105,11 @@ int main(int argc, char** argv) {
         //show_model(to_name(87));
     }
 
-
+    delete[] centers;
 
     return EXIT_SUCCESS;
 }
 void kernel(){
-
     double step = CV_PI / k;
 
     for(int i = 0; i < k; i++) {
@@ -123,65 +119,59 @@ void kernel(){
     }
 }
 
-void gabor_filter(Mat & img , float* data){
+void gabor_filter(Mat& img , float *data){
+
     if (kernels.empty())
         kernel();
 
-    vector<Mat> filter(k);
+    vector<Mat> filters(k);
 
-    for(int i = 0; i < k; i++){
-        filter2D(img, filter[i], -1, kernels[i], Point(-1, -1), 0, BORDER_DEFAULT);
-    }
+    for(int i = 0; i < k; i++)
+        filter2D(img, filters[i], -1, kernels[i], Point(-1, -1), 0, BORDER_DEFAULT);
 
-    int d = 0;
+    int index = 0;
     int row_gap = (img.rows - window_size) / point_per_row;
     int col_gap = (img.cols - window_size) / point_per_row;
 
-    for(int i = 0; i < img.rows - window_size; i += row_gap){
-        for(int j = 0; j < img.cols - window_size; j += col_gap){
-            for(int kk = 0; kk < k; kk++){
-                for(int u = 0; u < window_size; u++){
-                    for(int v = 0; v < window_size; v++){
-                        data[d++] = filter[kk].at<float>(u + i, v + j);
-                    }
-                }
-            }
-        }
-    }
+    for(int i = 0; i < img.rows - window_size; i += row_gap)
+        for(int j = 0; j < img.cols - window_size; j += col_gap)
+            for(int dir = 0; dir < k; dir++)
+                for(int u = 0; u < window_size; u++)
+                    for(int v = 0; v < window_size; v++)
+                        data[index++] = filters[dir].at<float>(u + i, v + j);
 
 }
 // return the index of model
 int retrieve(Mat& image, Clusters& dictionary) {
+
     // use Gabor filter
     int dim = window_size * window_size * k;
-    float *data = new float[point_count * dim];
-    gabor_filter(image, data);
-    Mat blob(Size(dim,point_count),CV_32F);
+    float *gabor_data = new float[feature_count * dim];
+    gabor_filter(image, gabor_data);
 
-    int d = 0;
-    for(int i = 0; i < point_count; i++){
-        for(int j = 0; j < dim; j++){
-            blob.at<float>(i,j) = data[d++];
-        }
-    }
     // translate into words
-    int* word = new int[point_count];
-    dictionary.find_center(blob, word, point_count);
-    // compute TF-IDF
+    int* word = new int[feature_count];
+    dictionary.find_center(gabor_data, word, feature_count);
 
-    if (tf_idf.get_word_count() == 0)
-        tf_idf = TF_IDF(database_file);
+    // compute TF-IDF
+    //ofstream output("word.bin");
+    //output.write((char*)word, sizeof(float) * feature_count *dim);
+    //output.close();
+
+    TF_IDF tf_idf(database_file);
 
     //cout << tf_idf.get_word_count() << endl;
+
     // get nearest neighbor
-    Mat tf = Mat::zeros(Size(data_count,1),CV_32S);
-    for(int i = 0; i < point_count; i++)
-        tf.at<int>(0,word[i])++;
+    int *tf_value = new int[center_count];
+    for(int i = 0; i < feature_count; i++)
+        tf_value[word[i]]++;
 
-    int result = tf_idf.find_nearest(tf);
+    int result = tf_idf.find_nearest(tf_value);
 
-    delete[] data;
+    delete[] tf_value;
     delete[] word;
+    delete[] gabor_data;
 
     return result;
 }
@@ -263,7 +253,7 @@ bool parse_command_line(int argc, char **argv) {
                 mode = Camera;
                 break;
             case 'p':
-                point_count = atoi(argv[++i]);
+                feature_count = atoi(argv[++i]);
                 break;
         }
         i++;

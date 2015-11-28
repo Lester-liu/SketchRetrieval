@@ -17,16 +17,16 @@ using namespace cv;
 class Clusters {
 
 private:
-    int find_center(Mat& vector , int x) const; // get cluster number of one vector
+    int center_count;
+    int dim; // the dimension by default is the same as all query vectors
+    int find_center(float *vector, int x) const; // get cluster number of one vector
 
 public:
-    Mat centers;
+    float *centers;
     Clusters();
-    Clusters(Mat& centers);
+    Clusters(float *centers, int center_count, int dim);
     virtual ~Clusters();
-    int row() const; // the number of centers
-    int col() const; // the center dimension
-    void find_center(Mat& vectors, int *allocation, int n) const; // get nearest neighbor for n vectors
+    void find_center(float *vectors, int *allocation, int n) const; // get nearest neighbor for n vectors
 
 };
 

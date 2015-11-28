@@ -5,9 +5,11 @@
 #ifndef SKETCH_TF_IDF_H
 #define SKETCH_TF_IDF_H
 
-#include "clusters.h"
+#include <fstream>
+#include "opencv2/opencv.hpp"
 
 using namespace std;
+using namespace cv;
 
 /*
  * The class TF_IDF simulates a real database, given a new document with word frequency (TF), it looks into its
@@ -17,7 +19,8 @@ class TF_IDF {
 
 private:
     int word_count; // number of words
-    Mat tf_idf;
+    int document_count; // number of documents in the databases
+    float *tf_idf;
     float *idf; // IDF value of each word
 
 public:
@@ -26,8 +29,8 @@ public:
 
     virtual ~TF_IDF();
 
-    int find_nearest(Mat& tf_value); // given Tf vector, find the nearest document
-    int get_word_count();
+    int find_nearest(int *tf_value); // given Tf vector, find the nearest document
+    int get_word_count(); // return the number of words
 };
 
 

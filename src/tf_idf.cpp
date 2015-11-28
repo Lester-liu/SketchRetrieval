@@ -3,70 +3,68 @@
 //
 
 #include "tf_idf.h"
-#include <fstream>
 
 TF_IDF::TF_IDF() {
     word_count = 0;
-    idf = new float[0];
+    document_count = 0;
+    tf_idf = NULL;
+    idf = NULL;
 }
 
 TF_IDF::TF_IDF(string database_file) {
     ifstream input(database_file);
 
-    int picture_count;
-    input.read((char*)&picture_count, sizeof(int));
-    input.read((char*)&word_count, sizeof(int));
+    input.read((char*)&document_count, sizeof(int));
+    input.read((char*)&word_count, sizeof(int)); // dimension of each tf-idf vector
 
     idf = new float[word_count];
     input.read((char*)idf, sizeof(float) * word_count);
 
-    float* data = new float[word_count * picture_count];
-    input.read((char*)data, sizeof(float) * word_count * picture_count);
-
-    int d = 0;
-
-    Mat b(Size(word_count,picture_count),CV_32F);
-    for(int i = 0; i < picture_count; i++){
-        for(int j = 0; j < word_count; j++){
-            b.at<float>(i,j) = data[d++];
-        }
-    }
-    tf_idf = b;
+    tf_idf = new float[document_count * word_count];
+    input.read((char*)tf_idf, sizeof(float) * document_count * word_count);
 
     input.close();
 }
 
-int TF_IDF::find_nearest(Mat &tf_value) {
-    assert(tf_value.rows == 1);
-    assert(tf_value.cols == word_count);
+int TF_IDF::find_nearest(int *tf_value) {
     float norm = 0;
-    for(int i = 0; i < word_count; i++){
-        float tmp = (float)tf_value.at<int>(0,i) * idf[i];
+    float tmp = 0;
+    //ofstream output("check.txt");
+    for(int j = 0; j < word_count; j++){
+        tmp = tf_value[j] * idf[j];
+        //output << (float)tf_value.at<int>(0,i) * idf[i] <<' ';
         norm += tmp * tmp;
-
     }
+    //output << endl;
     norm = sqrt(norm);
 
-    int maxi = -1;
-    float max_value = 0;
-    for(int i = 0; i < tf_idf.rows; i++){
-        float tmp = 0;
-        float normi = 0;
+    int max_index = -1;
+    float max_value = -1;
+    for(int i = 0; i < document_count; i++){
+        tmp = 0; // dot product
+        float norm_i = 0;
         for(int j = 0; j < word_count; j++){
-            tmp += tf_idf.at<float>(i,j) * (float)tf_value.at<int>(0,j) * idf[j];
-            normi += tf_idf.at<float>(i,j) * tf_idf.at<float>(i,j);
+            //output << tf_idf.at<float>(i,j) <<' ';
+            tmp += tf_idf[i * word_count + j] * tf_value[j] * idf[j];
+            norm_i += tf_idf[i * word_count + j] * tf_idf[i * word_count + j];
         }
-        tmp = tmp / norm / sqrt(normi);
-        if (maxi == -1  || tmp > max_value){
-            maxi = i;
+        tmp = tmp / norm / sqrt(norm_i);
+        if (max_index == -1  || tmp > max_value){
+            max_index = i;
             max_value = tmp;
         }
+        //output << endl;
     }
     cout << max_value <<endl;
-    return maxi;
+    return max_index;
 }
 
-TF_IDF::~TF_IDF() { };
+TF_IDF::~TF_IDF() {
+    if (idf)
+        delete[] idf;
+    if (tf_idf)
+        delete[] tf_idf;
+};
 
 int TF_IDF::get_word_count() {
     return word_count;
