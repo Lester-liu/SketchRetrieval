@@ -43,55 +43,67 @@
 #include <set>
 #include <vector>
 #include <cmath>
+#include <cassert>
 
 using namespace std;
 
-int word_count, view_count, image_per_model; // total number of image
+int center_count, document_count, image_per_model; // total number of image
 string input, output_data, output_index;
 float* idf;
-vector<float*> dict; // tf-idf values
+vector<vector<int>> tf; // temporary tf values
+float* dict; // tf-idf values
 vector<string> models;
 
 //read one file
 void read_file(string path, string file_name){
 
-    if (!ifstream(path + file_name))
+    if (file_name[0] == '.')
         return;
 
     set<int> word_set;
 
     ifstream input(path + file_name);
 
-    int image_count, data_count, tmp; // number of image per model
+    int image_count, feature_count; // number of image per model
 
     if (!input.read((char*)&image_count, sizeof(int)))
         return;
-    if (!input.read((char*)&data_count, sizeof(int)))
+    if (!input.read((char*)&feature_count, sizeof(int)))
         return;
 
-    view_count += image_count;
     image_per_model = image_count;
+
+    int *feature = new int[feature_count];
 
     for(int i = 0; i < image_count; i++){
         word_set.clear();
-        float* tf = new float[word_count];
-        for(int j = 0; j < word_count; j++)
-            tf[j] = 0;
 
         //calculate the local tf value
-        for(int j = 0; j < data_count; j++){
-            input.read((char*)&tmp, sizeof(int));
-            word_set.insert(tmp);
-            tf[tmp]++;
-        }
-        dict.push_back(tf);
+        vector<int> tf_value(center_count); // use vector is easier than pointer
+        fill(tf_value.begin(), tf_value.end(), 0); // init at 0
 
-        //update the occurence of each word
+        input.read((char*) feature, sizeof(int) * feature_count);
+        for(int j = 0; j < feature_count; j++){
+            word_set.insert(feature[j]);
+            tf_value[feature[j]]++; // build tf vector
+        }
+
+        tf.push_back(tf_value);
+
+        //update the occurrence of each word
         for(auto j: word_set)
             idf[j]++;
+
+        document_count++;
+        assert(document_count == tf.size());
     }
+
+    delete[] feature;
+
     string name = file_name.substr(1,file_name.find('.')-1);
     models.push_back(name);
+
+    input.close();
 }
 
 bool parse_command_line(int argc, char **argv) {
@@ -103,7 +115,7 @@ bool parse_command_line(int argc, char **argv) {
             case 'h': // help
                 return false;
             case 'k': // threshold flag
-                word_count = atoi(argv[++i]);
+                center_count = atoi(argv[++i]);
                 break;
             case 'i': // input file
                 input = argv[++i];
@@ -117,16 +129,10 @@ bool parse_command_line(int argc, char **argv) {
         }
         i++;
     }
-    if (input == "" || output_data == "" || output_index == "") { // invalid file name
+    if (input.length() <= 0 || output_data.length() <= 0 || output_index.length() <= 0) { // invalid file name
         return false;
     }
     return true;
-}
-
-void print_view(int j){
-    for(int i = 0; i < word_count; i++)
-        cout << dict[j][i] <<' ';
-    cout << endl;
 }
 
 int main(int argc, char** argv) {
@@ -134,8 +140,8 @@ int main(int argc, char** argv) {
     if (!parse_command_line(argc, argv))
         return EXIT_FAILURE;
 
-    idf = new float[word_count];
-    view_count = 0;
+    idf = new float[center_count];
+    document_count = 0;
 
     DIR *dir;
     struct dirent *ent;
@@ -144,42 +150,41 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
 
     //treat each file
-    while((ent = readdir(dir))!=NULL){
+    while((ent = readdir(dir))!=NULL)
         read_file(input, ent->d_name);
-    }
 
     //calculate the idf value
-    for(int i = 0; i < word_count; i++) {
-        idf[i] = idf[i] == 0 ? 0 : log((float) view_count / idf[i]);
-        cout << idf[i] <<' ';
+    for(int i = 0; i < center_count; i++) {
+        idf[i] = idf[i] == 0 ? 0 : log((float) document_count / idf[i]);
     }
-    cout << endl;
-    cout << "dict\n";
+
+    dict = new float[document_count * center_count];
+
     //calculate the tf-idf value
-    for(int i = 0; i < view_count; i++){
-        for(int j = 0; j < word_count; j++){
-            dict[i][j] *= idf[j];
-        }
-    }
-    //print_view(0);
+    for(int i = 0; i < document_count; i++)
+        for(int j = 0; j < center_count; j++)
+            dict[i * center_count + j] = tf[i][j] * idf[j];
 
-    ofstream outd(output_data);
+    // write the dictionary
+    ofstream out_dict(output_data);
 
-    outd.write((char*)&view_count, sizeof(int));
-    outd.write((char*)&word_count, sizeof(int));
-    outd.write((char*)idf,sizeof(float)*word_count);
+    out_dict.write((char*)&document_count, sizeof(int));
+    out_dict.write((char*)&center_count, sizeof(int));
 
-    for(int i = 0; i < view_count; i++){
-        outd.write((char*)dict[i], sizeof(float) * word_count);
-        delete[] dict[i];
-    }
-    outd.close();
+    out_dict.write((char*)idf, sizeof(float) * center_count);
+    out_dict.write((char*)dict, sizeof(float) * document_count * center_count);
 
-    ofstream outi(output_index);
-    outi << models.size() <<' ' << image_per_model <<  endl;
+    delete[] idf;
+    delete[] dict;
+
+    out_dict.close();
+
+    // write down the model number
+    ofstream out_index(output_index);
+    out_index << models.size() << ' ' << image_per_model <<  endl;
     for(int i = 0; i < models.size(); i++)
-         outi << models[i] << endl;
-    outi.close();
+         out_index << models[i] << endl;
+    out_index.close();
 
     return EXIT_SUCCESS;
 }
