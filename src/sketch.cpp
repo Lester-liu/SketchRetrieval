@@ -90,17 +90,28 @@ int main(int argc, char** argv) {
 
     if (mode == File) {
         Mat image_gray = imread(input_file, CV_LOAD_IMAGE_GRAYSCALE);
+        Mat image_scale;
+        resize(image_gray, image_scale, Size(64, 64), 0, 0, INTER_AREA);
+        int sum = 0;
+        for (int i = 0; i < image_scale.rows; i++)
+            for (int j = 0; j < image_scale.cols; j++)
+                sum += image_scale.at<uchar>(i, j);
+        if (sum / (64 * 64) > 50) // if the background is write, need to reverse the color
+            for (int i = 0; i < image_scale.rows; i++)
+                for (int j = 0; j < image_scale.cols; j++)
+                    image_scale.at<uchar>(i, j) = (image_scale.at<uchar>(i, j) > 250) ? 0 : 255;
         Mat image;
         imshow("Sketch", image_gray); // show sketch
-        waitKey(0);
+        waitKey(2);
 
-        image_gray.convertTo(image, CV_32F);
+        image_scale.convertTo(image, CV_32F);
         int label = retrieve(image, dict); // document index
 
         model_index = to_index(label);
         cout << model_index << endl;
 
         show_model(to_name(model_index)); // show model
+
     }
     else if (mode == Camera) {
 

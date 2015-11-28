@@ -9,4 +9,4 @@ Dict="../../../data/Sketch/result.dict"
 Label="../../../data/Sketch/label"
 Model="../../../data/Sketch/models_ply/"
 
-././../Debug/sketch -d $Data -w $Dict -l $Label -m $Model -f $Sketch
+././../Release/sketch -d $Data -w $Dict -l $Label -m $Model -f $Sketch
