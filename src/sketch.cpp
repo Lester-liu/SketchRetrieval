@@ -63,7 +63,7 @@ void show_help();
 
 void read_dict(Clusters &dict);
 
-int retrieve(Mat& image, Clusters& dictionary, TF_IDF& tf_idf); // return the index of model
+int retrieve(Mat& image, Clusters& dictionary); // return the index of model
 
 void show_model(string file); // show 3D model with VTK
 
@@ -91,8 +91,6 @@ int main(int argc, char** argv) {
     Clusters dict(centers, center_count, dim);
 
     // compute TF-IDF
-    TF_IDF tf_idf(database_file);
-
     if (mode == File) {
         Mat image_gray = imread(input_file, CV_LOAD_IMAGE_GRAYSCALE);
         Mat image_scale;
@@ -106,12 +104,12 @@ int main(int argc, char** argv) {
                 for (int j = 0; j < image_scale.cols; j++)
                     image_scale.at<uchar>(i, j) = (image_scale.at<uchar>(i, j) > 250) ? 0 : 255;
         Mat image;
-        //imshow("Sketch", image_scale); // show sketch
-        //waitKey(2);
+        imshow("Sketch", image_scale); // show sketch
+        waitKey(2);
 
         image_scale.convertTo(image, CV_32F);
-        int label = retrieve(image, dict, tf_idf); // document index
-
+        int label = retrieve(image, dict); // document index
+        cout << label << endl;
         model_index = to_index(label);
         cout << model_index << endl;
 
@@ -139,7 +137,8 @@ int main(int argc, char** argv) {
 
             Mat image;
             image_scale.convertTo(image, CV_32F);
-            int label = retrieve(image, dict, tf_idf); // document index
+            int label = retrieve(image, dict); // document index
+            cout << label << endl;
 
             model_index = to_index(label);
             cout << model_index << endl;
@@ -193,7 +192,7 @@ void gabor_filter(Mat& img , float *data){
 
 }
 // return the index of model
-int retrieve(Mat& image, Clusters& dictionary, TF_IDF& tf_idf) {
+int retrieve(Mat& image, Clusters& dictionary) {
 
     // use Gabor filter
     int dim = window_size * window_size * k;
@@ -203,6 +202,10 @@ int retrieve(Mat& image, Clusters& dictionary, TF_IDF& tf_idf) {
     // translate into words
     int *feature = new int[feature_count];
     dictionary.find_center(gabor_data, feature, feature_count);
+
+    TF_IDF tf_idf(database_file);
+
+
 
     // get nearest neighbor
     int *tf_value = new int[center_count];
