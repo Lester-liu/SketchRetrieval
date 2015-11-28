@@ -17,9 +17,10 @@
  *      o: output file
  *      a: picture_path
  *      m: number of pictures to read
+ *      d: draw gabor or not
  *
  * Usage:
- *      gabor -k [k] -p [number of points] -n [n] -s [sigma] -t [theta] -l [lambda] -b [beta] -i [Path_to_input] -o [Path_to_output] -a [picture_path]
+ *      gabor [-k k] [-p number of points] [-n n] [-s sigma] [-t theta] [-l lambda] [-b beta] -i [Path_to_input] -o [Path_to_output] -a [picture_path] [-d on/off]
  */
 
 #include <iostream>
@@ -41,6 +42,7 @@ double sigma = 4;
 double theta = 0;
 double lambda = 10.0;
 double beta = 0.5;
+bool draw_gabor = false;
 
 vector<Mat> filters(k); // k filters
 vector<float*> result; // matrix representing the image
@@ -145,6 +147,10 @@ bool parse_command_line(int argc, char **argv) {
             case 'm':
                 picture_number = atoi(argv[++i]);
                 break;
+            case 'd':
+                if (atoi(argv[++i]) == 1)
+                    draw_gabor = true;
+                break;
 
         }
         i++;
@@ -170,6 +176,16 @@ void show_middle_row(Mat &m){
     cout << endl;
 }
 
+void convertTo(Mat & a, Mat &b){
+    double maxi, mini;
+    minMaxLoc(a,&mini, &maxi);
+    for(int i =  0; i < a.rows; i++){
+        for(int j = 0; j < a.cols; j++){
+            b.at<uchar>(i,j) = (uchar)((a.at<float>(i,j)-mini)/(maxi - mini) * 255.0);
+        }
+    }
+}
+
 int main(int argc, char** argv) {
 
     if (!parse_command_line(argc, argv))
@@ -186,6 +202,16 @@ int main(int argc, char** argv) {
     for(int i = 0; i < k; i++) {
         Mat kernel = getGaborKernel(Size(kernel_size, kernel_size), sigma,
                                     theta + step * (double) i, lambda, beta, CV_PI * 0.5, CV_32F);
+        kernels.push_back(kernel);
+        if (draw_gabor){
+            Mat kernel_grey(Size(kernel_size,kernel_size),CV_8U), heatkernel;
+
+            convertTo(kernel,kernel_grey);
+            applyColorMap(kernel_grey, heatkernel, COLORMAP_HSV);
+            string output_path = output+"kernel" + to_string(i) +".png";
+            //cout << output_path << endl;
+            imwrite(output_path,heatkernel);
+        }
     }
 
     for(int pictures  = 0; pictures < picture_number; pictures++) {
@@ -202,19 +228,37 @@ int main(int argc, char** argv) {
         for (int i = 0; i < k; i++) {
 
             filter2D(src, filters[i], -1, kernels[i], Point(-1, -1), 0, BORDER_DEFAULT);
+
+            if (draw_gabor){
+                Mat filter_grey(Size(filters[i].cols,filters[i].rows), CV_8U), filter_heat;
+
+                convertTo(filters[i],filter_grey);
+
+                applyColorMap(filter_grey, filter_heat, COLORMAP_HSV);
+                string output_path = output + "filter" + to_string(i) + ".png";
+               // cout << output_path << endl;
+                imwrite(output_path, filter_heat);
+            }
         }
+
+
 
         // uniformly distributed points
         int row_gap = (img.rows - window_size) / point_per_row;
         int col_gap = (img.cols - window_size) / point_per_row;
 
+        /*int line_count = (img.rows - window_size)/row_gap * (img.cols - window_size) / col_gap;
+        Mat gabor(Size(window_size * window_size * k, line_count), CV_32F);
+        int line_index = 0;
+*/
         for (int i = 0; i < img.rows; i += row_gap)
             for (int j = 0; j < img.cols; j += col_gap)
                 if (i + window_size < img.rows && j + window_size < img.cols)
                     result.push_back(get_vector(i, j)); // append new local feature
     }
 
-    save(output);
+    if (!draw_gabor)
+        save(output);
     cout << input << " Done!" << endl;
     return 0;
 }

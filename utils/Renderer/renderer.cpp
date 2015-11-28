@@ -22,7 +22,8 @@
  *      n (square root of number of images: enter 3 to generate 9 images)
  *      f (path to PLY model)
  *      t (path of the folder where images will be generated, with '/' in the end)
- * ex: Renderer -g [-p r] [-c r g b] [-n Number] -f Path_to_model_file -t Path_to_image_folder
+ *      d (number of rotations)
+ * ex: Renderer -g [-p r] [-c r g b] [-n Number] -f Path_to_model_file -t Path_to_image_folder [-d ang]
  */
 
 #include <vtkPolyData.h>
@@ -77,6 +78,7 @@ double phi, theta; // camera angles
 int step_count = 1;
 double min_angle = 0;
 double max_angle = 360;
+int ang = 1;
 
 void show_help(){
     printf("3D Mesh (PLY) rendering\n"
@@ -149,6 +151,9 @@ bool parse_command_line(int argc, char **argv) {
             case 't': // output image file
                 output = argv[++i];
                 break;
+            case 'd':
+                ang = atoi(argv[++i]);
+                break;
         }
         i++;
     }
@@ -197,7 +202,7 @@ int main(int argc, char **argv) {
     // use all possible angle combinations
     for(int i = 0; i < step_count; i++, theta += step) {
         for(int j = 0; j < step_count; j++, phi += step) {
-            for (int d = 0; d < 8; d++) {
+            for (int d = 0; d < ang; d++) {
                 position = from_polar(camera_distance, phi, theta);
 
                 vtkSmartPointer<vtkCamera> camera = vtkSmartPointer<vtkCamera>::New();
@@ -212,7 +217,7 @@ int main(int argc, char **argv) {
 
                 vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
                 renderWindow->AddRenderer(renderer);
-                renderWindow->SetSize(64, 64); // width, height
+                renderWindow->SetSize(300, 300); // width, height
                 renderWindow->SetOffScreenRendering(1); // Off Screen rendering
 
                 renderWindow->Render(); // Renderer needs a windows to render its image
