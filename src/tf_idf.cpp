@@ -26,7 +26,7 @@ TF_IDF::TF_IDF(string database_file) {
     input.close();
 }
 
-int TF_IDF::find_nearest(int *tf_value) {
+pair<int,float> TF_IDF::find_nearest(int *tf_value) {
 
     float norm = 0;
     float tmp = 0;
@@ -52,7 +52,8 @@ int TF_IDF::find_nearest(int *tf_value) {
             max_value = tmp;
         }
     }
-    return max_index;
+
+    return make_pair(max_index, max_value);
 }
 
 TF_IDF::~TF_IDF() {

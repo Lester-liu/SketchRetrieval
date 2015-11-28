@@ -210,13 +210,15 @@ int retrieve(Mat& image, Clusters& dictionary, TF_IDF& tf_idf) {
     for(int i = 0; i < feature_count; i++)
         tf_value[feature[i]]++;
 
-    int result = tf_idf.find_nearest(tf_value);
+    pair<int,float> result;
+    result = tf_idf.find_nearest(tf_value);
 
     delete[] tf_value;
     delete[] feature;
     delete[] gabor_data;
 
-    return result;
+    cout << "similarity " << result.second << endl;
+    return result.first;
 }
 
 // show 3D model with VTK

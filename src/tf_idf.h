@@ -29,7 +29,7 @@ public:
 
     virtual ~TF_IDF();
 
-    int find_nearest(int *tf_value); // given Tf vector, find the nearest document
+    pair<int,float> find_nearest(int *tf_value); // given Tf vector, find the nearest document
 };
 
 

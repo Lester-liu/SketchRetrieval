@@ -13,7 +13,10 @@ for Folder in $View_Foler*/
 do
     Dest_Name="${Folder%/}"
     Dest_Name="${Dest_Name##*/}"
-    #echo "./Gabor/Release/./gabor -i $Folder$Name -o $Dest_Folder$Dest_Name.bin -a $Contour_Folder$Dest_Name/ -m $Picture_Number"
-    ./Gabor/Debug/./gabor -i $Folder$Name -o $Dest_Folder$Dest_Name.bin -a $Contour_Folder$Dest_Name/ -m $Picture_Number
 
+    rm -rf "$Dest_Folder$Dest_Name";
+    mkdir "$Dest_Folder$Dest_Name";
+    #echo "./Gabor/Release/./gabor -i $Folder$Name -o $Dest_Folder$Dest_Name.bin -a $Contour_Folder$Dest_Name/ -m $Picture_Number"
+    #./Gabor/Debug/./gabor -i $Folder$Name -o $Dest_Folder$Dest_Name.bin -a $Contour_Folder$Dest_Name/ -m $Picture_Number
+    ./Gabor/Debug/./gabor -i $Folder$Name -o $Dest_Folder/$Dest_Name/ -a $Contour_Folder$Dest_Name/ -m $Picture_Number -d 1
 done

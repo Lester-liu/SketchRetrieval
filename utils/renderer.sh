@@ -18,5 +18,5 @@ do
         rm -rf "$Dest_Folder$Dest";
         mkdir "$Dest_Folder$Dest";
         # Run the renderer
-        ./Renderer/Debug/renderor -g -n $Number -f $Src -t $Dest_Folder$Dest/;
+        ./Renderer/Release/renderor -g -n $Number -f $Src -t $Dest_Folder$Dest/;
 done
