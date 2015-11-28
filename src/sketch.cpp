@@ -33,6 +33,8 @@
 #include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
 
+#include "opencv2/opencv.hpp"
+
 #include "tf_idf.h"
 #include "clusters.h"
 
@@ -61,7 +63,7 @@ void show_help();
 
 void read_dict(Clusters &dict);
 
-int retrieve(Mat& image, Clusters& dictionary); // return the index of model
+int retrieve(Mat& image, Clusters& dictionary, TF_IDF& tf_idf); // return the index of model
 
 void show_model(string file); // show 3D model with VTK
 
@@ -88,6 +90,9 @@ int main(int argc, char** argv) {
 
     Clusters dict(centers, center_count, dim);
 
+    // compute TF-IDF
+    TF_IDF tf_idf(database_file);
+
     if (mode == File) {
         Mat image_gray = imread(input_file, CV_LOAD_IMAGE_GRAYSCALE);
         Mat image_scale;
@@ -105,7 +110,7 @@ int main(int argc, char** argv) {
         //waitKey(2);
 
         image_scale.convertTo(image, CV_32F);
-        int label = retrieve(image, dict); // document index
+        int label = retrieve(image, dict, tf_idf); // document index
 
         model_index = to_index(label);
         cout << model_index << endl;
@@ -115,9 +120,37 @@ int main(int argc, char** argv) {
     }
     else if (mode == Camera) {
 
+        VideoCapture cap(0); // open the default camera
+
+        Mat image_scale;
+        namedWindow("Sketch", 1);
+        int threshold = 128;
+        createTrackbar("Threshold", "Sketch", &threshold, 255);
+        while (true) {
+            Mat frame;
+            cap >> frame; // get a new frame from camera
+            Mat tmp;
+            resize(frame, tmp, Size(64, 64));
+            cvtColor(tmp, image_scale, CV_BGR2GRAY);
+            for (int i = 0; i < image_scale.rows; i++)
+                for (int j = 0; j < image_scale.cols; j++)
+                    image_scale.at<uchar>(i, j) = (image_scale.at<uchar>(i, j) > threshold) ? 0 : 255;
+            imshow("Sketch", image_scale);
+
+            Mat image;
+            image_scale.convertTo(image, CV_32F);
+            int label = retrieve(image, dict, tf_idf); // document index
+
+            model_index = to_index(label);
+            cout << model_index << endl;
+
+            if (waitKey(100) >= 0)
+                break;
+        }
+
     }
     else { // Testing mode
-        //show_model(to_name(87));
+        show_model(to_name(87));
     }
 
     delete[] centers;
@@ -160,7 +193,7 @@ void gabor_filter(Mat& img , float *data){
 
 }
 // return the index of model
-int retrieve(Mat& image, Clusters& dictionary) {
+int retrieve(Mat& image, Clusters& dictionary, TF_IDF& tf_idf) {
 
     // use Gabor filter
     int dim = window_size * window_size * k;
@@ -170,10 +203,6 @@ int retrieve(Mat& image, Clusters& dictionary) {
     // translate into words
     int *feature = new int[feature_count];
     dictionary.find_center(gabor_data, feature, feature_count);
-
-
-    // compute TF-IDF
-    TF_IDF tf_idf(database_file);
 
     // get nearest neighbor
     int *tf_value = new int[center_count];
@@ -243,7 +272,7 @@ bool parse_command_line(int argc, char **argv) {
     while(i < argc) {
         if (argv[i][0] != '-')
             break;
-        switch(argv[i][1]) {
+        switch (argv[i][1]) {
             case 'h': // help
                 show_help();
                 return false;
@@ -272,7 +301,7 @@ bool parse_command_line(int argc, char **argv) {
         }
         i++;
     }
-    if (database_file == "" || dictionary_file == "")
+    if (database_file.length() <= 0 || dictionary_file.length() <= 0)
         return false;
     return true;
 }
