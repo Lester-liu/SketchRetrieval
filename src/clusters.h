@@ -19,7 +19,6 @@ class Clusters {
 private:
     int center_count;
     int dim; // the dimension by default is the same as all query vectors
-    int find_center(float *vector, int x) const; // get cluster number of one vector
 
 public:
     float *centers;

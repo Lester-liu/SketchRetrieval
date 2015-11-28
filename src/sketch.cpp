@@ -91,12 +91,16 @@ int main(int argc, char** argv) {
     if (mode == File) {
         Mat image_gray = imread(input_file, CV_LOAD_IMAGE_GRAYSCALE);
         Mat image;
-        image_gray.convertTo(image, CV_32FC1);
-        int label = retrieve(image, dict);
+        imshow("Sketch", image_gray); // show sketch
+        waitKey(0);
 
-        cout << label << endl;
+        image_gray.convertTo(image, CV_32F);
+        int label = retrieve(image, dict); // document index
+
         model_index = to_index(label);
         cout << model_index << endl;
+
+        show_model(to_name(model_index)); // show model
     }
     else if (mode == Camera) {
 
@@ -140,6 +144,9 @@ void gabor_filter(Mat& img , float *data){
                     for(int v = 0; v < window_size; v++)
                         data[index++] = filters[dir].at<float>(u + i, v + j);
 
+    assert(index == feature_count * dim && dim == k * window_size * window_size);
+
+
 }
 // return the index of model
 int retrieve(Mat& image, Clusters& dictionary) {
@@ -150,27 +157,23 @@ int retrieve(Mat& image, Clusters& dictionary) {
     gabor_filter(image, gabor_data);
 
     // translate into words
-    int* word = new int[feature_count];
-    dictionary.find_center(gabor_data, word, feature_count);
+    int *feature = new int[feature_count];
+    dictionary.find_center(gabor_data, feature, feature_count);
+
 
     // compute TF-IDF
-    //ofstream output("word.bin");
-    //output.write((char*)word, sizeof(float) * feature_count *dim);
-    //output.close();
-
     TF_IDF tf_idf(database_file);
-
-    //cout << tf_idf.get_word_count() << endl;
 
     // get nearest neighbor
     int *tf_value = new int[center_count];
+    fill(tf_value, tf_value + center_count, 0);
     for(int i = 0; i < feature_count; i++)
-        tf_value[word[i]]++;
+        tf_value[feature[i]]++;
 
     int result = tf_idf.find_nearest(tf_value);
 
     delete[] tf_value;
-    delete[] word;
+    delete[] feature;
     delete[] gabor_data;
 
     return result;

@@ -30,7 +30,6 @@ public:
     virtual ~TF_IDF();
 
     int find_nearest(int *tf_value); // given Tf vector, find the nearest document
-    int get_word_count(); // return the number of words
 };
 
 

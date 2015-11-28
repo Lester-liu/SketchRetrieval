@@ -27,15 +27,14 @@ TF_IDF::TF_IDF(string database_file) {
 }
 
 int TF_IDF::find_nearest(int *tf_value) {
+
     float norm = 0;
     float tmp = 0;
-    //ofstream output("check.txt");
+
     for(int j = 0; j < word_count; j++){
         tmp = tf_value[j] * idf[j];
-        //output << (float)tf_value.at<int>(0,i) * idf[i] <<' ';
         norm += tmp * tmp;
     }
-    //output << endl;
     norm = sqrt(norm);
 
     int max_index = -1;
@@ -44,7 +43,6 @@ int TF_IDF::find_nearest(int *tf_value) {
         tmp = 0; // dot product
         float norm_i = 0;
         for(int j = 0; j < word_count; j++){
-            //output << tf_idf.at<float>(i,j) <<' ';
             tmp += tf_idf[i * word_count + j] * tf_value[j] * idf[j];
             norm_i += tf_idf[i * word_count + j] * tf_idf[i * word_count + j];
         }
@@ -53,9 +51,7 @@ int TF_IDF::find_nearest(int *tf_value) {
             max_index = i;
             max_value = tmp;
         }
-        //output << endl;
     }
-    cout << max_value <<endl;
     return max_index;
 }
 
@@ -65,7 +61,3 @@ TF_IDF::~TF_IDF() {
     if (tf_idf)
         delete[] tf_idf;
 };
-
-int TF_IDF::get_word_count() {
-    return word_count;
-}
