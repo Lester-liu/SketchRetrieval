@@ -14,15 +14,18 @@
  *      m: folder to all PLY models
  *      c: camera mode
  *      f: file mode with input image file path
+ *      v: path to the view folder
+ *      t: show the top matching views or model
  *
  * Usage 1 (file based query):
- *      sketch -d [database_file] -w [dictionary_file] -l [label_file] -m [model_folder] -f [input_file]
+ *      sketch -d [database_file] -w [dictionary_file] -l [label_file] -m [model_folder] -f [input_file] -v [view_folder_path] [-t]
  *
  * Usage 2 (real-time query with camera):
  *      sketch -d [database_file] -w [dictionary_file] -l [label_file] -m [model_folder] -c
  */
 
 #include <iostream>
+#include <dirent.h>
 
 #include <vtkPolyData.h>
 #include <vtkPLYReader.h>
@@ -41,12 +44,13 @@
 enum Mode {Camera, File, Testing};
 Mode mode = Testing;
 
-string database_file, label_file, input_file, dictionary_file;
+string database_file, label_file, input_file, dictionary_file, view_path;
 
 string model_base = "/home/lyx/workspace/data/TinySketch/models_ply/";
 
 vector<Mat> kernels;
 
+const int show = 3;
 int k = 8; // number of Gabor filters
 int kernel_size = 15;
 double sigma = 4;
@@ -58,6 +62,9 @@ int point_per_row = 28;
 int center_count = 0;
 int dim = 0;
 int feature_count = point_per_row * point_per_row; // number of features per image
+
+bool show_top_mathcing = false;
+Mat result_mat(Size(900,900),CV_8U);
 
 void show_help();
 
@@ -106,16 +113,21 @@ int main(int argc, char** argv) {
                 for (int j = 0; j < image_scale.cols; j++)
                     image_scale.at<uchar>(i, j) = (image_scale.at<uchar>(i, j) > 250) ? 0 : 255;
         Mat image;
-        //imshow("Sketch", image_scale); // show sketch
-        //waitKey(2);
+        imshow("Sketch", image_scale); // show sketch
+        waitKey(2);
 
         image_scale.convertTo(image, CV_32F);
         int label = retrieve(image, dict, tf_idf); // document index
 
         model_index = to_index(label);
         cout << model_index << endl;
-
-        show_model(to_name(model_index)); // show model
+        if (!show_top_mathcing)
+            show_model(to_name(model_index)); // show model*/
+        else {
+            image_scale.copyTo(result_mat(Rect(0, 0, image_scale.cols, image_scale.rows)));
+            imshow("result", result_mat);
+            waitKey(0);
+        }
 
     }
     else if (mode == Camera) {
@@ -193,6 +205,31 @@ void gabor_filter(Mat& img , float *data){
 
 }
 // return the index of model
+
+//find and (show) the view correspondant to the index
+Mat show_picture(int index){
+    int model_index = to_index(index);
+    string name = view_path+"m"+to_string(model_index)+"/";
+    int rest = index%36;
+    cout << name <<' ' << rest<< endl;
+    DIR *dir;
+    struct dirent *ent;
+    if ((dir = opendir(name.c_str()))!= NULL){
+        int i = 0;
+        while(i <= rest){
+            ent = readdir(dir);
+            if (ent->d_name[0]!='.')
+                i++;
+        }
+    }
+    name = name + ent->d_name;
+    cout << name <<endl;
+    Mat img = imread(name, CV_LOAD_IMAGE_GRAYSCALE);
+    //imshow(to_string(model_index),img);
+    closedir(dir);
+    return img;
+}
+
 int retrieve(Mat& image, Clusters& dictionary, TF_IDF& tf_idf) {
 
     // use Gabor filter
@@ -210,15 +247,26 @@ int retrieve(Mat& image, Clusters& dictionary, TF_IDF& tf_idf) {
     for(int i = 0; i < feature_count; i++)
         tf_value[feature[i]]++;
 
-    pair<int,float> result;
+    vector<pair<float,int> > result;
     result = tf_idf.find_nearest(tf_value);
+    sort(result.begin(), result.end());
 
     delete[] tf_value;
     delete[] feature;
     delete[] gabor_data;
 
-    cout << "similarity " << result.second << endl;
-    return result.first;
+    // if show_top_matching mode then change the result_mat
+    if (show_top_mathcing) {
+        for (int i = result.size() - 1; i > result.size() - show * show; i--) {
+            Mat img = show_picture(result[i].second);
+            int j = result.size() - i;
+            img.copyTo(result_mat(Rect(j / show * 300, (j % show) * 300, 300, 300)));
+        }
+    }
+
+    //cout << result[result.size() -1].first << endl;
+    return result[result.size() -1].second;
+    //return result_mat;
 }
 
 // show 3D model with VTK
@@ -299,6 +347,12 @@ bool parse_command_line(int argc, char **argv) {
                 break;
             case 'p':
                 feature_count = atoi(argv[++i]);
+                break;
+            case 'v':
+                view_path = argv[++i];
+                break;
+            case 't':
+                show_top_mathcing = true;
                 break;
         }
         i++;

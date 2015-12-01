@@ -22,6 +22,7 @@ private:
     int document_count; // number of documents in the databases
     float *tf_idf;
     float *idf; // IDF value of each word
+    float scalor_product(float *a, float *b,int n);
 
 public:
     TF_IDF();
@@ -29,7 +30,7 @@ public:
 
     virtual ~TF_IDF();
 
-    pair<int,float> find_nearest(int *tf_value); // given Tf vector, find the nearest document
+    vector<pair<float,int> > find_nearest(int *tf_value); // given Tf vector, find the nearest document
 };
 
 

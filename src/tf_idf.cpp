@@ -26,7 +26,14 @@ TF_IDF::TF_IDF(string database_file) {
     input.close();
 }
 
-pair<int,float> TF_IDF::find_nearest(int *tf_value) {
+float TF_IDF::scalor_product(float *a, float *b, int n) {
+    float tmp = 0;
+    for(int i = 0; i < n; i++)
+        tmp += a[i] * b[i];
+    return tmp;
+}
+
+vector<pair<float,int> > TF_IDF::find_nearest(int *tf_value) {
 
     float norm = 0;
     float tmp = 0;
@@ -39,6 +46,9 @@ pair<int,float> TF_IDF::find_nearest(int *tf_value) {
 
     int max_index = -1;
     float max_value = -1;
+
+    vector<pair<float,int> > result;
+
     for(int i = 0; i < document_count; i++){
         tmp = 0; // dot product
         float norm_i = 0;
@@ -47,13 +57,13 @@ pair<int,float> TF_IDF::find_nearest(int *tf_value) {
             norm_i += tf_idf[i * word_count + j] * tf_idf[i * word_count + j];
         }
         tmp = tmp / norm / sqrt(norm_i);
-        if (max_index == -1  || tmp > max_value){
+        /*if (max_index == -1  || tmp > max_value){
             max_index = i;
             max_value = tmp;
-        }
+        }*/
+        result.push_back(make_pair(tmp,i));
     }
-
-    return make_pair(max_index, max_value);
+    return result;
 }
 
 TF_IDF::~TF_IDF() {
