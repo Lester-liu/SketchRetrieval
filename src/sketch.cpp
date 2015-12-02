@@ -44,7 +44,7 @@
 enum Mode {Camera, File, Testing};
 Mode mode = Testing;
 
-string database_file, label_file, input_file, dictionary_file, view_path;
+string database_file, label_file, input_file, dictionary_file, view_path, view_sorted_path;
 
 string model_base = "/home/lyx/workspace/data/TinySketch/models_ply/";
 
@@ -102,6 +102,8 @@ int main(int argc, char** argv) {
 
     if (mode == File) {
         Mat image_gray = imread(input_file, CV_LOAD_IMAGE_GRAYSCALE);
+        Mat image_resize;
+        resize(image_gray, image_resize, Size(300, 300), 0, 0, INTER_AREA);
         Mat image_scale;
         resize(image_gray, image_scale, Size(64, 64), 0, 0, INTER_AREA);
         int sum = 0;
@@ -112,6 +114,7 @@ int main(int argc, char** argv) {
             for (int i = 0; i < image_scale.rows; i++)
                 for (int j = 0; j < image_scale.cols; j++)
                     image_scale.at<uchar>(i, j) = (image_scale.at<uchar>(i, j) > 250) ? 0 : 255;
+
         Mat image;
         imshow("Sketch", image_scale); // show sketch
         waitKey(2);
@@ -124,8 +127,10 @@ int main(int argc, char** argv) {
         if (!show_top_mathcing)
             show_model(to_name(model_index)); // show model*/
         else {
-            image_scale.copyTo(result_mat(Rect(0, 0, image_scale.cols, image_scale.rows)));
+            image_resize.copyTo(result_mat(Rect(0, 0, image_resize.cols, image_resize.rows)));
             imshow("result", result_mat);
+            string save_name = view_path + input_file.substr(input_file.find_last_of('/'));
+            imwrite(save_name,result_mat);
             waitKey(0);
         }
 
@@ -209,24 +214,18 @@ void gabor_filter(Mat& img , float *data){
 //find and (show) the view correspondant to the index
 Mat show_picture(int index){
     int model_index = to_index(index);
-    string name = view_path+"m"+to_string(model_index)+"/";
+    string name = view_sorted_path+"m"+to_string(model_index)+"/view.txt";
     int rest = index%36;
     cout << name <<' ' << rest<< endl;
-    DIR *dir;
-    struct dirent *ent;
-    if ((dir = opendir(name.c_str()))!= NULL){
-        int i = 0;
-        while(i <= rest){
-            ent = readdir(dir);
-            if (ent->d_name[0]!='.')
-                i++;
-        }
+    ifstream input(name);
+    string img_name;
+    int tmp;
+    for(int i = 0; i <= rest; i++){
+        input >> img_name >> tmp;
     }
-    name = name + ent->d_name;
-    cout << name <<endl;
-    Mat img = imread(name, CV_LOAD_IMAGE_GRAYSCALE);
+    cout << view_path + "m" + to_string(model_index) + "/" +img_name <<endl;
+    Mat img = imread(view_path + "m" + to_string(model_index) + "/" +img_name, CV_LOAD_IMAGE_GRAYSCALE);
     //imshow(to_string(model_index),img);
-    closedir(dir);
     return img;
 }
 
@@ -353,6 +352,9 @@ bool parse_command_line(int argc, char **argv) {
                 break;
             case 't':
                 show_top_mathcing = true;
+                break;
+            case 's':
+                view_sorted_path = argv[++i];
                 break;
         }
         i++;

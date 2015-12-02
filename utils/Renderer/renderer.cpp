@@ -217,7 +217,7 @@ int main(int argc, char **argv) {
 
                 vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
                 renderWindow->AddRenderer(renderer);
-                renderWindow->SetSize(300, 300); // width, height
+                renderWindow->SetSize(64, 64); // width, height
                 renderWindow->SetOffScreenRendering(1); // Off Screen rendering
 
                 renderWindow->Render(); // Renderer needs a windows to render its image
